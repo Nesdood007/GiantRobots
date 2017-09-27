@@ -128,6 +128,35 @@ public class ResourceBase : MonoBehaviour{
         return (Regions)rL.ToArray().GetValue((new System.Random()).Next() % rL.Count);
     }
 
+    public static Vector3 GetRandomSpawnPoint(float y = -1)
+    {
+        float precision = 1000f;
+        var terrain = GameObject.FindGameObjectWithTag("Terrain");
+        var terrainComponent = terrain.GetComponent<Terrain>();
+
+        var size = terrainComponent.terrainData.size;
+        var min = terrainComponent.terrainData.bounds.min;
+        var max = terrainComponent.terrainData.bounds.max;
+
+        min = new Vector3(min.x * precision, min.y * precision, min.z * precision);
+        max = new Vector3(max.x * precision, max.y * precision, max.z * precision);
+        var diff = max - min;
+
+
+        var r = new System.Random();
+
+        var randomInts = new int[6];
+        for(int i = 0; i < 6; i++)        
+            randomInts[i] = r.Next();
+
+        var pos = new Vector3(((randomInts[0] % diff.x) + min.x) * (1f/precision), ((randomInts[0] % diff.y) + min.y) * (1f/precision), ((randomInts[0] % diff.z) + min.z) * (1f/precision));
+
+        if (y > 0)
+            pos = new Vector3(pos.x, y, pos.z);
+
+        return pos;
+    }
+
     /// <summary>
     ///  Returns an integer value between 1 and 100 that represents how abundant this
     ///  resource is in the given region based on it's rarity.

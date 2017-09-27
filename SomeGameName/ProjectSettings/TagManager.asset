@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Resource
   - GameManager
+  - Fire
+  - Terrain
   layers:
   - Default
   - TransparentFX

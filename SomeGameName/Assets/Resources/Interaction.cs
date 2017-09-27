@@ -6,9 +6,12 @@ public class Interaction : MonoBehaviour {
 
     GameObject player;
     ResourceSpawn respawnComponent;
+    public float delayTime = 0.5f;
+    float currentTime;
     // Use this for initialization
     void Start () {
         respawnComponent = GameObject.FindGameObjectWithTag("GameManager").GetComponent<ResourceSpawn>();
+        currentTime = delayTime;
     }
 	
 	// Update is called once per frame
@@ -16,16 +19,26 @@ public class Interaction : MonoBehaviour {
 		
 	}
 
-    void OnCollisionEnter(Collision col)
+    private void OnTriggerEnter(Collider other)
     {
-        Debug.Log(col.gameObject.tag);
-        if(col.gameObject.tag == "Player")
-        {           
-            if(tag == "Resource")
+        if (other.gameObject.tag == "Player")
+        {
+            if (currentTime >= delayTime)
             {
-                respawnComponent.Respawn<ResourceBase>(this.gameObject.GetComponent<ResourceBase>());
+                if (tag == "Resource")
+                {
+                    respawnComponent.Respawn<ResourceBase>(this.gameObject.GetComponent<ResourceBase>());
+                }
+                Destroy(gameObject);
+                currentTime = 0;
             }
-            Destroy(gameObject);
+            else
+            {
+                currentTime += Time.deltaTime;
+            }
         }
+        else
+            Debug.Log(other.gameObject.tag);
     }
+
 }

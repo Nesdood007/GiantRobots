@@ -67,7 +67,33 @@ public class Inventory : MonoBehaviour {
             }
 
         }
-        Debug.Log(ToString());
+        Debug.Log(InventoryToString());
+    }
+
+    void OnTriggerEnter(Collider col)
+    {
+        if (Time.timeSinceLevelLoad < 2)
+            return;
+        
+        GameObject gameObj;
+        if (col.gameObject.name.Contains("Afterburner"))
+            gameObj = col.gameObject.transform.parent.gameObject;
+        else
+            gameObj = col.gameObject;
+        if (gameObj.tag == ObjectType.Resource.ToString())
+        {
+            if (InventoryContainsKey(gameObj.name))
+            {
+                var key = FormatKey(gameObj.name, ObjectType.Resource);
+                items[key]++;
+            }
+            else
+            {
+                items.Add(FormatKey(gameObj.name, ObjectType.Resource), 1);
+            }
+
+        }
+        Debug.Log(InventoryToString());
     }
 
     string FormatKey(string key, ObjectType type)
@@ -93,12 +119,13 @@ public class Inventory : MonoBehaviour {
         
     }
 
-    public override string ToString()
+    public string InventoryToString()
     {
         var s = "";
         foreach (var i in items)        
             s += i.Key + ": " + i.Value +", ";
-
+        if (s == string.Empty)
+            return "";
         return s.Substring(0, s.Length-2);
     }
 }

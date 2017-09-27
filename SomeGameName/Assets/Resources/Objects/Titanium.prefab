@@ -190,7 +190,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   type: 1
   rarity: 25
-  primaryRegion: 0
+  primaryRegion: 3
   currentRegion: 0
   baseSpawnRate: 30
 --- !u!114 &114348956904189226
@@ -204,6 +204,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8f157dee13861b4e88d8ff337ccb9d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  delayTime: 0.5
 --- !u!114 &114772551790590076
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -249,7 +250,7 @@ SphereCollider:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1177562996049622}
   m_Material: {fileID: 0}
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.5
@@ -311,7 +312,7 @@ ParticleSystem:
   moveWithTransform: 0
   moveWithCustomTransform: {fileID: 0}
   scalingMode: 2
-  randomSeed: 312424890
+  randomSeed: 962634974
   InitialModule:
     serializedVersion: 3
     enabled: 1
@@ -3377,7 +3378,7 @@ ParticleSystem:
   moveWithTransform: 0
   moveWithCustomTransform: {fileID: 0}
   scalingMode: 2
-  randomSeed: 488598771
+  randomSeed: 143343967
   InitialModule:
     serializedVersion: 3
     enabled: 1
@@ -6419,7 +6420,7 @@ ParticleSystemRenderer:
   m_ReflectionProbeUsage: 1
   m_Materials:
   - {fileID: 2100000, guid: 89ff19d667a6a5d4bb76df1fcb718402, type: 2}
-  - {fileID: 0}
+  - {fileID: 2100000, guid: 89ff19d667a6a5d4bb76df1fcb718402, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

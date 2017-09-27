@@ -4,30 +4,36 @@ using UnityEngine;
 using System;
 using System.Timers;
 
-public class ResourceSpawn : MonoBehaviour {
+public class ResourceSpawn : MonoBehaviour
+{
 
     List<QueueNode> spawnQueue;
     public List<GameObject> resourceObjectPrefabs;
 
     // Use this for initialization
-    void Start () {
+    void Start()
+    {
         spawnQueue = new List<QueueNode>();
 
     }
-	
-	// Update is called once per frame
-	void Update () {
+
+    // Update is called once per frame
+    void Update()
+    {
         if (spawnQueue.Count == 0)
             return;
 
         int i = 0;
-        while(i < spawnQueue.Count)
+        while (i < spawnQueue.Count)
         {
             spawnQueue[i].Timer -= Time.deltaTime;
             //Debug.Log(spawnQueue[i].Timer);
             if (spawnQueue[i].Timer <= 25)
             {
-                Instantiate(spawnQueue[i].Object);
+                var resc = Instantiate(spawnQueue[i].Object);
+                var spawnPoint = ResourceBase.GetRandomSpawnPoint();
+                spawnPoint = new Vector3(spawnPoint.x, 2 + Terrain.activeTerrain.SampleHeight(spawnPoint), spawnPoint.z);
+                resc.transform.position = spawnPoint;
                 spawnQueue.Remove(spawnQueue[i]);
             }
             else
@@ -39,11 +45,9 @@ public class ResourceSpawn : MonoBehaviour {
 
     public void Respawn<T>(T resource)
         where T : ResourceBase
-    {               
-        foreach(var r in resourceObjectPrefabs)
-        {
-            Debug.Log(r.name);
-            Debug.Log(resource.Type);
+    {
+        foreach (var r in resourceObjectPrefabs)
+        {            
             if (r.name == resource.Type.ToString())
             {
                 var rescBase = r.GetComponent<ResourceBase>();
@@ -52,7 +56,7 @@ public class ResourceSpawn : MonoBehaviour {
                 break;
             }
         }
-    }    
+    }
 }
 
 
