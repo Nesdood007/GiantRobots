@@ -1,8 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
-public class Movement : MonoBehaviour {
+public class Movement : NetworkBehaviour {
 
     CharacterController characterController;
     public float horizontalSpeed = 1f;
@@ -17,12 +18,13 @@ public class Movement : MonoBehaviour {
     Vector3 right;
     Vector3 gravityVec;
     Vector3 up;
+    public Vector3 startPosition = new Vector3(10,3,10);
 
     // Use this for initialization
     void Start () {
         characterController = GetComponent<CharacterController>();
         gravityVec = new Vector3(0, -gravity, 0);
-
+        transform.position = startPosition;
     }
 	
 	// Update is called once per frame
@@ -30,6 +32,8 @@ public class Movement : MonoBehaviour {
         //var direction = transform.TransformDirection(Vector3.forward + Vector3.right);
         //characterController.Move(new Vector3(direction.x * horizontalSpeed * Time.deltaTime * Input.GetAxis("Horizontal"), , direction.z * forwardSpeed * Time.deltaTime * Input.GetAxis("Vertical")));
 
+        if (!isLocalPlayer)
+            return;
 
         var forw = Input.GetAxis("Vertical");
         var side = Input.GetAxis("Horizontal");

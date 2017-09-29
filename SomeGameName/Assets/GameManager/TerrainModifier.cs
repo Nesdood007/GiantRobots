@@ -12,7 +12,7 @@ public class TerrainModifier : MonoBehaviour {
         var length = terrain.terrainData.heightmapResolution;
         heightMapGenerator = new GenerateHeightMap(length, length);
         
-        var map = heightMapGenerator.GetMap();
+        var map = new Desert(length * 4, Corners.BottomLeft).GetMap();
        terrain.terrainData.SetHeights(0, 0, map);
     }
 
