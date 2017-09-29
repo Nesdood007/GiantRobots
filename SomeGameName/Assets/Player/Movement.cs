@@ -9,9 +9,14 @@ public class Movement : MonoBehaviour {
     public float forwardSpeed = 1f;
     public float rotationSpeed = 1f;
     public float gravity = 2f;
+    public float jumpForce = 5f;
+    public float airTime = 2f;
+    bool isJumping = false;
+    float elapsedJumpTime = 0f;
     Vector3 forward;
     Vector3 right;
     Vector3 gravityVec;
+    Vector3 up;
 
     // Use this for initialization
     void Start () {
@@ -28,16 +33,41 @@ public class Movement : MonoBehaviour {
 
         var forw = Input.GetAxis("Vertical");
         var side = Input.GetAxis("Horizontal");
-
+        var jump = Input.GetKeyDown("space");
+       
+        
         if (Input.GetAxis("Rotate") != 0)        
             transform.Rotate(new Vector3(0, rotationSpeed * Time.deltaTime * Input.GetAxis("Rotate"), 0));
 
+        if (isJumping)
+        {
+            elapsedJumpTime += Time.deltaTime;
+            var jumpHeight = GetJumpHeight(elapsedJumpTime);
+            up = new Vector3(0, jumpHeight, 0);
+            if (elapsedJumpTime >= airTime)
+            {
+                isJumping = false;
+                elapsedJumpTime = 0;
+            }
+            characterController.SimpleMove(up);
+            return;
+        }
+
+        if (!characterController.isGrounded)
+        {
+            characterController.SimpleMove(gravityVec);
+            Debug.Log(gravityVec);
+            return;
+        }
+
         if (forw != 0)
         {
-            var direction = transform.TransformDirection(Vector3.forward);            
+            var direction = transform.TransformDirection(Vector3.forward);
             direction = direction * forwardSpeed;
             forward = new Vector3(direction.x * Time.deltaTime * forw, 0, direction.z * Time.deltaTime * forw);
         }
+        else
+            forward = Vector3.zero;
         
         if(side != 0)
         {
@@ -45,14 +75,32 @@ public class Movement : MonoBehaviour {
             direction = direction * forwardSpeed;
             right = new Vector3(direction.x * Time.deltaTime * side, 0, direction.z * Time.deltaTime * side);
         }
-
-        if (side != 0 && forw != 0)
-            characterController.Move(forward + right + gravityVec);
-        else if(side != 0)
-            characterController.Move(right + gravityVec);
-        else if (forw != 0)
-            characterController.Move(forward + gravityVec);
         else
-            characterController.Move(gravityVec);
+            right = Vector3.zero;
+
+       
+
+        if (jump)
+        {
+            //var direction = transform.TransformDirection(Vector3.up);
+            //direction = direction * jumpForce;
+            //up = new Vector3(0, direction.y * Time.deltaTime, 0);
+            isJumping = true;
+            //Debug.Log(direction);
+        }
+        else
+            up = Vector3.zero;
+
+        //if (jump)
+        //    characterController.Move(forward + right + up);
+        //else
+            characterController.Move(forward + right + gravityVec);
+       
+    }
+
+    float GetJumpHeight(float elapsedTime)
+    {
+        //y = -(x - h)2
+        return -Mathf.Pow((elapsedTime - airTime * 2), 2) * jumpForce;
     }
 }

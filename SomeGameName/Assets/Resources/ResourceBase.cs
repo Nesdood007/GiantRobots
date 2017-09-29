@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
+
+
 public class ResourceBase : MonoBehaviour{
 
     public readonly int PrimaryRegionAbundance = 75;

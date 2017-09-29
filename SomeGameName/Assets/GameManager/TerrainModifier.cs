@@ -11,7 +11,7 @@ public class TerrainModifier : MonoBehaviour {
         terrain = GameObject.FindGameObjectWithTag("Terrain").GetComponent<Terrain>();
         var length = terrain.terrainData.heightmapResolution;
         heightMapGenerator = new GenerateHeightMap(length, length);
-        Debug.Log(length);
+        
         var map = heightMapGenerator.GetMap();
        terrain.terrainData.SetHeights(0, 0, map);
     }
