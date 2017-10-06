@@ -8,13 +8,13 @@ public abstract class RegionBase
 
     public static readonly float TerrainMaxHeight = .05f;
     public static readonly float TerrainMinHeight = -.05f;
-    System.Random random;
+    static System.Random random;
     protected bool IsCreatingHill = false;
     RatingScale currentHillHeight;
     public readonly float sin45Deg = Mathf.Abs(Mathf.Sin(Mathf.PI/4f));
     public static readonly float GrasslandFadeRadius = 50f;
 
-    public RegionBase(int mapResoultion, Corners corner, RatingScale maxHeight, RatingScale minHeight, RatingScale hillHeight, RatingScale hillyness)
+    public RegionBase(int mapResoultion, int terrainHeight, Corners corner, RatingScale maxHeight, RatingScale minHeight, RatingScale hillHeight, RatingScale hillyness, RatingScale hillWidth)
     {
         Length = mapResoultion / 2;
         ResetMap();
@@ -23,9 +23,17 @@ public abstract class RegionBase
         MinHeight = minHeight;
         Hillyness = hillyness;
         HillHeight = hillHeight;
-        random = new System.Random();
+        random = random??new System.Random();
         GrassLandsRadius = Length / 4;
         MaxNumberOfMountainsAtOneTime = 5;
+        HillWidth = hillWidth;
+        TerrainHeight = terrainHeight;
+    }
+
+    protected int TerrainHeight
+    {
+        get;
+        private set;
     }
 
     protected int MaxNumberOfMountainsAtOneTime
@@ -80,6 +88,12 @@ public abstract class RegionBase
         private set;
     }
 
+    public RatingScale HillWidth
+    {
+        get;
+        private set;
+    }
+
     protected float[,] Map
     {
         get;
@@ -110,7 +124,7 @@ public abstract class RegionBase
         if (probability <= 0)
             return false;
 
-        return random.Next()%(int)((1 / (float)(int)probability) * 100000)< (int)probability;     
+        return random.Next()%(int)((1 / (float)((int)probability*(int)probability)) * 100000)< (int)probability;     
     }
 
     protected int GetRandomHillHeight()
@@ -130,18 +144,53 @@ public abstract class RegionBase
             probabilityArray[i] = HillHeight;
 
         int modifier = 0;
-        for (int i = numberOfGivenHillHeights; i < probabilityArray.Length - numberOfGivenHillHeights; i++)
+        for (int i = numberOfGivenHillHeights; i < probabilityArray.Length; i++)
         {
-            var val = ((int)Hillyness + modifier);
+            var val = ((int)HillHeight + modifier);
             if (val > 10 || val < 1)
             {
                 modifier = 0;
-                val = ((int)Hillyness + modifier);
+                val = ((int)HillHeight + modifier);
             }
             probabilityArray[i] = (RatingScale)val;
 
             
-             modifier = (modifier > 0 ? -1 : 1) * (Mathf.Abs(modifier) + 1);
+             modifier = (modifier > 0 ? -1 : 1) * (Mathf.Abs(modifier) + (modifier < 0 ? 0 : 1));
+
+        }
+
+        return ((int)probabilityArray[random.Next() % 10]);
+    }
+
+    protected int GetRandomHillWidth()
+    {
+        if ((int)HillWidth == 0)
+            return 0;
+
+        if ((int)HillWidth == -1)
+        {
+            //TODO
+        }
+
+        var probabilityArray = new RatingScale[10];
+        var numberOfGivenHillHeights = (int)Mathf.Floor((int)Hillyness / 2f);
+
+        for (int i = 0; i < numberOfGivenHillHeights; i++)
+            probabilityArray[i] = HillWidth;
+
+        int modifier = 0;
+        for (int i = numberOfGivenHillHeights; i < probabilityArray.Length; i++)
+        {
+            var val = ((int)HillWidth + modifier);
+            if (val > 10 || val < 1)
+            {
+                modifier = 0;
+                val = ((int)HillWidth + modifier);
+            }
+            probabilityArray[i] = (RatingScale)val;
+
+
+            modifier = (modifier > 0 ? -1 : 1) * (Mathf.Abs(modifier) + (modifier < 0 ? 0 : 1));
 
         }
 
@@ -169,7 +218,7 @@ public abstract class RegionBase
 
     public float PercentAwayFromGrassland(int x, int y)
     {
-        return ((x * x + y * y) - (GrassLandsRadius* GrassLandsRadius)) / (GrasslandFadeRadius* GrasslandFadeRadius);
+        return ((Mathf.Pow(Length/2f - x, 2f) + Mathf.Pow(Length/2f - y, 2f)) - (GrassLandsRadius* GrassLandsRadius)) / (GrasslandFadeRadius* GrasslandFadeRadius);
     }
 
     public void SetGrasslands(ref float[,,] map)
@@ -188,29 +237,9 @@ public abstract class RegionBase
             }
         }
     }
-}
 
-public class Desert : RegionBase
-{
-    Texture sand;
-    Texture[] offTerrains;
-
-    public Desert(int mapResoultion, Corners corner)
-       : base(mapResoultion, corner, RatingScale.One, RatingScale.Zero, RatingScale.One, RatingScale.One)
+    public virtual float[,] CreateMountains()
     {
-       
-    }
-
-    public Desert(int mapResoultion, Corners corner, Texture sand, Texture[] offTerrains)
-        : base(mapResoultion, corner, RatingScale.One, RatingScale.Zero, RatingScale.One, RatingScale.Five)
-    {
-        this.sand = sand;
-        this.offTerrains = offTerrains;
-    }
-
-    public override float[,] GetMap()
-    {
-        ResetMap();
         bool canCreateMountain;
         List<float> heights = new List<float>();
 
@@ -221,7 +250,7 @@ public class Desert : RegionBase
             for (int i = 0; i < Length; i++)
             {
                 if (IsInGrasslands(i, j))
-                {                  
+                {
                     Map[j, i] = 0f;
                     continue;
                 }
@@ -230,16 +259,16 @@ public class Desert : RegionBase
                 foreach (var m in Mountains)
                     canCreateMountain &= m.CanCreateNewMountain(i, j);
 
-                if(canCreateMountain && GetRandomChance(Hillyness) && Mountains.Count <= MaxNumberOfMountainsAtOneTime)
+                if (canCreateMountain && GetRandomChance(Hillyness) && Mountains.Count <= MaxNumberOfMountainsAtOneTime)
                 {
-                    Debug.Log("Creating Mountain");
                     var radius = 0f;
                     float h = GetRandomHillHeight();
-                    while (radius == 0)
-                        radius = GetRandomHillHeight() * 100;
-                    h =  (1 / (11 - h));
-
-                    var angle = h / radius;
+                    h = (1 / (11 - h));
+                    do
+                    {
+                        radius = (GetRandomHillWidth() / 10f) * Length / 2f;
+                    }
+                    while (radius == 0 && Mathf.Asin(h * TerrainHeight / radius) * (180f / Mathf.PI) > 35);                    
 
                     //radius = radius * Length * Length;
                     var centerX = radius + i;
@@ -263,6 +292,31 @@ public class Desert : RegionBase
             }
         }
         return Map;
+    }
+}
+
+public class Desert : RegionBase
+{
+    Texture sand;
+    Texture[] offTerrains;
+
+    public Desert(int mapResoultion, int terrainHeight, Corners corner)
+       : base(mapResoultion, terrainHeight, corner, RatingScale.One, RatingScale.Zero, RatingScale.Three, RatingScale.One, RatingScale.Two)
+    {
+       
+    }
+
+    public Desert(int mapResoultion, int terrainHeight, Corners corner, Texture sand, Texture[] offTerrains)
+        : base(mapResoultion, terrainHeight, corner, RatingScale.One, RatingScale.Zero, RatingScale.Three, RatingScale.One, RatingScale.Two)
+    {
+        this.sand = sand;
+        this.offTerrains = offTerrains;
+    }
+
+    public override float[,] GetMap()
+    {
+        ResetMap();
+        return CreateMountains();
 
     }
 
@@ -288,6 +342,75 @@ public class Desert : RegionBase
                 else
                 {
                     map[i, j, 0] = 1f- fractionAway;
+                    map[i, j, 1] = fractionAway;
+                }
+                //var normX = (float)(i * 1.0 / (data.alphamapWidth - 1));
+                //var normY = (float)(j * 1.0 / (data.alphamapHeight - 1));
+
+                //// Get the steepness value at the normalized coordinate.
+                //var angle = data.GetSteepness(normX, normY);
+
+                //// Steepness is given as an angle, 0..90 degrees. Divide
+                //// by 90 to get an alpha blending value in the range 0..1.
+                //var frac = 1;
+                //map[i, j, 0] = frac;
+                //map[i, j, 1] = 1 - frac;
+            }
+        }
+
+        return map;
+    }
+
+
+}
+
+public class Mountains : RegionBase
+{
+    Texture sand;
+    Texture[] offTerrains;
+
+    public Mountains(int mapResoultion, int terrainHeight, Corners corner)
+       : base(mapResoultion, terrainHeight, corner, RatingScale.Ten, RatingScale.Five, RatingScale.Eight, RatingScale.Eight, RatingScale.Three)
+    {
+
+    }
+
+    public Mountains(int mapResoultion, int terrainHeight, Corners corner, Texture sand, Texture[] offTerrains)
+        : base(mapResoultion, terrainHeight, corner, RatingScale.Ten, RatingScale.Five, RatingScale.Eight, RatingScale.Eight, RatingScale.Three)
+    {
+        this.sand = sand;
+        this.offTerrains = offTerrains;
+    }
+
+    public override float[,] GetMap()
+    {
+        ResetMap();
+        return CreateMountains();
+
+    }
+
+    public override float[,,] GetTerrainMap(TerrainData data)
+    {
+        var map = new float[data.alphamapWidth, data.alphamapHeight, 2];
+        for (int j = 0; j < data.alphamapHeight; j++)
+        {
+            for (int i = 0; i < data.alphamapWidth; i++)
+            {
+                //if(IsInGrasslands(i, j))
+                //{
+                //    map[i, j, 0] = 0;
+                //    map[i, j, 1] = 1f;
+                //    continue;
+                //}
+                var fractionAway = PercentAwayFromGrassland(i, j);
+                if (fractionAway > 1f)
+                {
+                    map[i, j, 0] = 1f;
+                    map[i, j, 1] = 0;
+                }
+                else
+                {
+                    map[i, j, 0] = 1f - fractionAway;
                     map[i, j, 1] = fractionAway;
                 }
                 //var normX = (float)(i * 1.0 / (data.alphamapWidth - 1));

@@ -11,10 +11,12 @@ public class TerrainModifier : MonoBehaviour
     Terrain terrain;
     public Texture2D desertSand;
     public Texture2D grassLand;
+    bool useSingleMap = false;
     void Awake()
     {
         terrain = GameObject.FindGameObjectWithTag("Terrain").GetComponent<Terrain>();
         var length = terrain.terrainData.heightmapResolution;
+        var height = terrain.terrainData.heightmapHeight;
         //heightMapGenerator = new GenerateHeightMap(length, length);
 
         var s = new SplatPrototype();
@@ -24,16 +26,44 @@ public class TerrainModifier : MonoBehaviour
 
         terrain.terrainData.splatPrototypes = new SplatPrototype[2] { s, g };
 
-        var regions = new List<RegionBase>() { new Desert(length, Corners.BottomLeft), new Desert(length, Corners.TopLeft), new Desert(length, Corners.TopRight), new Desert(length, Corners.BottomRight) };
+        var regions = new List<RegionBase>() { new Desert(length, height, Corners.BottomLeft), new Mountains(length, height, Corners.TopLeft), new Desert(length, height, Corners.TopRight), new Desert(length, height, Corners.BottomRight) };
+        
         var map = new float[length, length];
 
-        var currentMap = regions.First((r) => r.Corner == Corners.TopLeft).GetMap();
 
-        Copy(RotateArrayLeft(FlipDiagonal(currentMap)), ref map, Corners.TopRight);
-        Copy(RotateArrayLeft(currentMap), ref map, Corners.TopLeft);
-        Copy(RotateArrayRight(currentMap), ref map, Corners.BottomRight);
-        Copy(currentMap, ref map, Corners.BottomLeft);
 
+        if (useSingleMap)
+        {
+            var currentMap = regions.First((r) => r.Corner == Corners.TopLeft).GetMap();
+            Copy(RotateArrayRight(RotateArrayRight(currentMap)), ref map, Corners.TopRight);
+            Copy(RotateArrayLeft(currentMap), ref map, Corners.TopLeft);
+            Copy(RotateArrayRight(currentMap), ref map, Corners.BottomRight);
+            Copy(currentMap, ref map, Corners.BottomLeft);
+        }
+        else
+        {
+            foreach(var r in regions)
+            {
+                var currentMap = r.GetMap();
+                switch(r.Corner)
+                {
+                    case Corners.BottomLeft:
+                        Copy(currentMap, ref map, Corners.BottomLeft);
+                        break;
+                    case Corners.BottomRight:
+                        Copy(RotateArrayRight(currentMap), ref map, Corners.BottomRight);
+                        break;
+                    case Corners.TopLeft:
+                        Copy(RotateArrayLeft(currentMap), ref map, Corners.TopLeft);
+                        break;
+                    default:
+                        Copy(RotateArrayRight(RotateArrayRight(currentMap)), ref map, Corners.TopRight);
+                        break;
+                }
+            }
+        }
+
+   
         terrain.terrainData.SetHeights(0, 0, map);
 
         var terrainMap = regions.First().GetTerrainMap(terrain.terrainData);
