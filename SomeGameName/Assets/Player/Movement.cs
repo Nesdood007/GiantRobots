@@ -17,14 +17,26 @@ public class Movement : NetworkBehaviour {
     Vector3 forward;
     Vector3 right;
     Vector3 gravityVec;
+<<<<<<< HEAD
     Vector3 up;
     public Vector3 startPosition = new Vector3(10,3,10);
 
+=======
+    
+    //Enable or disable mouse movement
+    public bool allowMouseX = true;
+    
+    
+>>>>>>> e1fc4641e03019c018c70942213cb1b017373acc
     // Use this for initialization
     void Start () {
         characterController = GetComponent<CharacterController>();
         gravityVec = new Vector3(0, -gravity, 0);
+<<<<<<< HEAD
         transform.position = startPosition;
+=======
+        
+>>>>>>> e1fc4641e03019c018c70942213cb1b017373acc
     }
 	
 	// Update is called once per frame
@@ -37,11 +49,25 @@ public class Movement : NetworkBehaviour {
 
         var forw = Input.GetAxis("Vertical");
         var side = Input.GetAxis("Horizontal");
+<<<<<<< HEAD
         var jump = Input.GetKeyDown("space");
        
         
         if (Input.GetAxis("Rotate") != 0)        
             transform.Rotate(new Vector3(0, rotationSpeed * Time.deltaTime * Input.GetAxis("Rotate"), 0));
+=======
+        var rot = Input.GetAxis("Rotate");
+        var mouseX = Input.GetAxis("Mouse X");
+        
+        
+        if (allowMouseX && mouseX != 0) {
+          transform.Rotate(new Vector3(0, rotationSpeed * Time.deltaTime * mouseX, 0));
+        }
+
+        if (rot != 0) {    
+            transform.Rotate(new Vector3(0, rotationSpeed * Time.deltaTime * rot, 0));
+        }
+>>>>>>> e1fc4641e03019c018c70942213cb1b017373acc
 
         if (isJumping)
         {
