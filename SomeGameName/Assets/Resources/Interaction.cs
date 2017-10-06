@@ -37,8 +37,8 @@ public class Interaction : MonoBehaviour {
                 currentTime += Time.deltaTime;
             }
         }
-        else
-            Debug.Log(other.gameObject.tag);
+        //else
+        //    Debug.Log(other.gameObject.tag);
     }
 
 }
