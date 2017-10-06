@@ -12,12 +12,16 @@ public class Movement : MonoBehaviour {
     Vector3 forward;
     Vector3 right;
     Vector3 gravityVec;
-
+    
+    //Enable or disable mouse movement
+    public bool allowMouseX = true;
+    
+    
     // Use this for initialization
     void Start () {
         characterController = GetComponent<CharacterController>();
         gravityVec = new Vector3(0, -gravity, 0);
-
+        
     }
 	
 	// Update is called once per frame
@@ -28,9 +32,17 @@ public class Movement : MonoBehaviour {
 
         var forw = Input.GetAxis("Vertical");
         var side = Input.GetAxis("Horizontal");
+        var rot = Input.GetAxis("Rotate");
+        var mouseX = Input.GetAxis("Mouse X");
+        
+        
+        if (allowMouseX && mouseX != 0) {
+          transform.Rotate(new Vector3(0, rotationSpeed * Time.deltaTime * mouseX, 0));
+        }
 
-        if (Input.GetAxis("Rotate") != 0)        
-            transform.Rotate(new Vector3(0, rotationSpeed * Time.deltaTime * Input.GetAxis("Rotate"), 0));
+        if (rot != 0) {    
+            transform.Rotate(new Vector3(0, rotationSpeed * Time.deltaTime * rot, 0));
+        }
 
         if (forw != 0)
         {
