@@ -200,6 +200,7 @@ MonoBehaviour:
   jumpForce: 20
   airTime: 2
   startPosition: {x: 10, y: 3, z: 10}
+  allowMouseX: 1
 --- !u!114 &114681524237311936
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -212,6 +213,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cameraOffset: {x: 0, y: 1, z: -4}
+  useMouse: 1
+  invertMouseY: 1
+  rotationSpeed: 50
 --- !u!114 &114697464928563718
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -295,7 +299,7 @@ CharacterController:
   serializedVersion: 2
   m_Height: 1
   m_Radius: 0.5
-  m_SlopeLimit: 45
+  m_SlopeLimit: 60
   m_StepOffset: 0.3
   m_SkinWidth: 0.0001
   m_MinMoveDistance: 0.001
