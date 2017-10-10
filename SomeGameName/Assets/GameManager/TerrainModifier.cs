@@ -11,6 +11,8 @@ public class TerrainModifier : MonoBehaviour
     Terrain terrain;
     public Texture2D desertSand;
     public Texture2D grassLand;
+    public static Cicle Grasslands;
+
     bool useSingleMap = false;
     void Awake()
     {
@@ -26,7 +28,7 @@ public class TerrainModifier : MonoBehaviour
 
         terrain.terrainData.splatPrototypes = new SplatPrototype[2] { s, g };
 
-        var regions = new List<RegionBase>() { new Desert(length, height, Corners.BottomLeft), new Mountains(length, height, Corners.TopLeft), new Desert(length, height, Corners.TopRight), new Desert(length, height, Corners.BottomRight) };
+        var regions = new List<RegionBase>() { new Desert(length, height, Corners.TopRight), new Mountains(length, height, Corners.TopLeft), new Desert(length, height, Corners.BottomLeft), new Desert(length, height, Corners.BottomRight) };
         
         var map = new float[length, length];
 
@@ -71,6 +73,14 @@ public class TerrainModifier : MonoBehaviour
 
         //TopLeft
         terrain.terrainData.SetAlphamaps(0, 0, terrainMap);
+
+        Grasslands = new Cicle(2*(regions.First().GrassLandsRadius/ terrain.terrainData.heightmapResolution)* terrain.terrainData.size.x, new Vector2(terrain.terrainData.size.x*.5f, terrain.terrainData.size.z*.5f));
+
+        var mapAlignment = new Dictionary<Corners, Regions>();
+        foreach (var r in regions)
+            mapAlignment.Add(r.Corner, (Regions)Enum.Parse(typeof(Regions), r.GetType().Name.ToString()));
+
+        GameObject.FindGameObjectWithTag("GameManager").GetComponent<Manager>().MapAlignment = mapAlignment;
 
     }
 
