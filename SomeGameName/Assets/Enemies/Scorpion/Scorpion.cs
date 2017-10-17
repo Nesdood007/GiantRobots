@@ -6,132 +6,153 @@ using System.Linq;
 
 public class Scorpion : MonoBehaviour
 {
-    public int health = 10;
-    public int damage = 5;
-    public float speed = 5f;
+    public bool AreDebugging = false;
     public bool canWanderThroughRegions = false;
+    public int damage = 5;
+    public int health = 10;
+    public float playerAttackRadius = 5f;
+    public float playerRadiusVision = 20f;
     public float spawnRate = 5f;
-    bool oldWanderingBounds;
-    ScorpionObject scorpionObject;
+    public float speed = 5f;
+
+
+    bool oldCanBegin = false;
     CharacterController characterController;
-
-
+    Texture2D healthBarFull;
+    Texture2D healthBarEmpty;
+    ScorpionObject scorpionObject;
+    Collider collider;
+    HealthBar healthBar;
+    
     void Awake()
     {
-        scorpionObject = new ScorpionObject(health, damage, speed, canWanderThroughRegions, spawnRate);
+        
         characterController = GetComponent<CharacterController>();
+        collider = GetComponent<BoxCollider>();
+        healthBarFull = (Texture2D)Resources.Load("fullHealth");
+        healthBarEmpty = (Texture2D)Resources.Load("emptyHealth");
+       
+        healthBar = GetComponentInChildren<HealthBar>();
+        healthBar.totalHealth = health;
+        healthBar.enabled = false;
+        scorpionObject = new ScorpionObject(health, damage, speed, canWanderThroughRegions, spawnRate, playerRadiusVision, playerAttackRadius);
     }
 
     void Update()
     {
-       if(!oldWanderingBounds && scorpionObject.WanderingBoundsHasBeenSet)
+       if(!oldCanBegin && scorpionObject.CanBegin)
         {
             scorpionObject.SetRandomDirection(transform);
             scorpionObject.SetRandomStartingPosition(transform);
         }
-        if (scorpionObject.WanderingBoundsHasBeenSet && scorpionObject.IsAlive && ScorpionObject.GameManager.GameIsGoing)
+        if (scorpionObject.CanBegin && scorpionObject.IsAlive && ScorpionObject.GameManager.GameIsGoing)
+        {
+            if (!scorpionObject.IsAttacking)
+                scorpionObject.Move(characterController, transform);
+            else
+            {
+                if (!healthBar.isActiveAndEnabled)
+                    healthBar.enabled = true;
+                healthBar.currentHealth = scorpionObject.Health;
+                scorpionObject.Attack(characterController, transform);
+            }
+        }
+        oldCanBegin = scorpionObject.CanBegin;
+
+        //DEBUG
+        if(AreDebugging && scorpionObject.CanBegin)
         {
             scorpionObject.Speed = speed;
-            scorpionObject.Move(characterController, transform);            
-        }        
-        oldWanderingBounds = scorpionObject.WanderingBoundsHasBeenSet;
+            scorpionObject.AttackStartingRange = playerAttackRadius;
+            healthBar.totalHealth = health;
+        }
     }
 
-    public void SetEnemyWanderingBounds()
+    //public void OnGUI()
+    //{
+    //    if (scorpionObject.CanBegin && scorpionObject.IsAlive && ScorpionObject.GameManager.GameIsGoing)
+    //    {
+    //        if (scorpionObject.IsAttacking)
+    //            scorpionObject.OnGUIAttack(transform, collider);
+    //    }
+    //}
+
+    public void SetWanderingBounds()
     {
-        var regions = GameObject.FindGameObjectWithTag("GameManager").GetComponent<Manager>().RegionPositions;
-        if (regions.Keys.Contains(scorpionObject.PrimaryRegion))
-        {
-            scorpionObject.wanderingBounds = regions[scorpionObject.PrimaryRegion];
-            scorpionObject.WanderingBoundsHasBeenSet = true;
-        }
+        scorpionObject.SetWanderingBounds();
     }
 
     private void OnTriggerEnter(Collider collider)
     {
-        if (collider.gameObject.tag == "Player" || collider.gameObject.tag == "Enemy")
-        {
+        if (collider.gameObject.tag == "Enemy")
             scorpionObject.SetRandomDirection(transform);
-            Debug.Log("?");
+        else if (collider.gameObject.tag == "Player")
+        {
+            scorpionObject.IsRunningAtPlayer = false;
+            collider.gameObject.GetComponent<Combat>().TakeDamage(scorpionObject.Damage);
         }
+    }
+
+    public void OnDeath()
+    {
+        GameObject.Destroy(this);
     }
 
 }
 
-public class ScorpionObject : EnemyBase<Desert>
+public class ScorpionObject : RoamingEnemy
 {
-    public Vector3 direction;
-    public Rect wanderingBounds;
-    public bool WanderingBoundsHasBeenSet = false;
-    public Regions PrimaryRegion = Regions.Desert;    
-
-    public ScorpionObject(int health, int damage, float speed, bool canWanderThroughRegions, float spawnRate)
-        : base(health, damage, speed, canWanderThroughRegions, spawnRate, Rarity.Common)
-    {     
-        
-    }
-
-    public void SetRandomDirection()
-    {
-        direction = new Vector3((Random.Next() %2==0? -1 : 1) *(Random.Next() % 100), 0, (Random.Next() % 2 == 0 ? -1 : 1) * (Random.Next() % 100)).normalized;
-        //transform.rotation = Quaternion.LookRotation(transform.TransformDirection(direction));
-    }
-
-    public void SetRandomDirection(Transform transform)
-    {
-        direction = new Vector3((Random.Next() % 2 == 0 ? -1 : 1) * (Random.Next() % 100), 0, (Random.Next() % 2 == 0 ? -1 : 1) * (Random.Next() % 100)).normalized;
-        transform.rotation = Quaternion.LookRotation(transform.TransformDirection(direction));
-    }
-
-    public void SetRandomStartingPosition(Transform transform)
-    {
-        var startingPosition = new Vector3(Random.Next() % wanderingBounds.width + wanderingBounds.xMin, 0, Random.Next() % wanderingBounds.height + wanderingBounds.yMin);
-        transform.position = new Vector3(startingPosition.x, Terrain.activeTerrain.SampleHeight(startingPosition) + 2f, startingPosition.z);
-    }
-
-    public void SetEnemyWanderingBounds()
-    {
-        var regions = GameObject.FindGameObjectWithTag("GameManager").GetComponent<Manager>().RegionPositions;
-        
-        if (regions.Keys.Contains(PrimaryRegion))
-        {
-            wanderingBounds = regions[PrimaryRegion];
-            WanderingBoundsHasBeenSet = true;
-            
-        }
-    }
-
-    internal Rect GetEnemyWanderingBounds()
-    {
-        return wanderingBounds;
-    }
-
-    public override void ExecuteOnUpdate()
-    {
-
-    }
-
-    public override void Move(CharacterController characterController, Transform transform)
-    {
-        
-        var newPos = transform.TransformDirection(-.5f, 0, -.5f);
-
-        newPos *= Speed * Time.deltaTime;
-        characterController.SimpleMove(newPos + Gravity);
-
-        var projectedPosition = characterController.velocity + transform.position;
-        if (projectedPosition.x < wanderingBounds.xMin || projectedPosition.x > wanderingBounds.xMax || projectedPosition.z < wanderingBounds.yMin || projectedPosition.z > wanderingBounds.yMax || TerrainModifier.Grasslands.PointIsInCircle(new Vector2(projectedPosition.x, projectedPosition.z)))
-        {
-            SetRandomDirection(transform);
-        }
-    }
-
    
-    
-
-    public override void Attack()
+    public ScorpionObject(int health, int damage, float speed, bool canWanderThroughRegions, float spawnRate, float playerVisionRadius, float attackStartingRange)
+        : base(health, damage, speed, spawnRate, Rarity.Common, Regions.Desert, playerVisionRadius, canWanderThroughRegions)
     {
+        IsRunningAtPlayer = false;
+        AttackStartingRange = attackStartingRange;
+    }
 
+    public float AttackStartingRange
+    {
+        get;
+        set;
+    }
+
+    public bool IsRunningAtPlayer
+    {
+        get;
+        internal set;
+    }
+
+    public override void Attack(CharacterController characterController, Transform transform)
+    {
+        if(TargetPlayer == null || TargetPlayerCollider == null)
+        {
+            IsAttacking = false;
+            return;
+        }        
+        
+        transform.rotation = Quaternion.Euler(RemoveX(Quaternion.LookRotation(TargetPlayer.transform.position - transform.position).eulerAngles));
+        var distance = Vector3.Distance(TargetPlayer.transform.position, transform.position);
+
+        if (!IsRunningAtPlayer && distance <= AttackStartingRange)
+        {
+            var newPos = RemoveY(transform.TransformDirection(-Vector3.forward));
+
+            newPos *= Speed * Time.deltaTime;
+            characterController.SimpleMove(newPos + Gravity);           
+        } else
+        {
+            IsRunningAtPlayer = true;
+            var newPos = RemoveY(transform.TransformDirection(Vector3.forward));
+
+            newPos *= Speed * Time.deltaTime * 3f;
+            characterController.SimpleMove(newPos + Gravity);
+        }
+
+    }
+
+    public void OnGUIAttack(Transform transform, Collider collider)
+    {
+        //DrawHealthBar(TargetPlayerCamera, transform, collider);
     }
 
     public override void DropItem()
