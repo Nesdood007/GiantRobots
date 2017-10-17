@@ -47,6 +47,7 @@ GameObject:
   - component: {fileID: 114802716662611712}
   - component: {fileID: 114697464928563718}
   - component: {fileID: 114747681018287472}
+  - component: {fileID: 114837217142913474}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -212,7 +213,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 57a47411133bdda4cb3ec995fcc17706, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cameraOffset: {x: 0, y: 1, z: -4}
+  cameraOffset: {x: 0, y: 1, z: -6}
   useMouse: 1
   invertMouseY: 1
   rotationSpeed: 50
@@ -280,6 +281,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d40be996c290d841808cae8a94da73d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &114837217142913474
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1094499963437164}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0080778a185825a49961a4382583ca82, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  startingHealth: 100
+  damage: 5
+  IsAlive: 1
 --- !u!124 &124911812248100266
 Behaviour:
   m_ObjectHideFlags: 1

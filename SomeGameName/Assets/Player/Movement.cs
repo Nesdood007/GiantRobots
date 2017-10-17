@@ -24,6 +24,11 @@ public class Movement : NetworkBehaviour
     public Vector3 startPosition = new Vector3(10, 3, 10);
 
 //=======
+
+    public bool IsLocalPlayer
+    {
+        get { return isLocalPlayer; }
+    }
     
     //Enable or disable mouse movement
     public bool allowMouseX = true;
@@ -96,7 +101,7 @@ public class Movement : NetworkBehaviour
             direction = direction * forwardSpeed;
             RaycastHit hit;
             var ray = new Ray(characterController.transform.position, transform.TransformDirection(Vector3.down));
-            Debug.Log(characterController.Raycast(ray, out hit, 10000000));
+            //Debug.Log(characterController.Raycast(ray, out hit, 10000000));
 
             if (characterController.Raycast(ray, out hit, 10000000))//if (characterController.isGrounded && collider.Raycast(ray, out hit, 100) && hit.transform.gameObject.tag == "Terrain")
             {

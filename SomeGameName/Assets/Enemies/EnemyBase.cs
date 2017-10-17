@@ -2,41 +2,45 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using System.Linq;
 
-public abstract class EnemyBase<T> 
-    where T : RegionBase
+public abstract class EnemyBase    
 {
     public static Manager GameManager;
-    public static Vector3 Gravity;
+    public static readonly Vector3 Gravity = Vector3.down * 5f;
     public static System.Random Random;
-    System.Object lockGM = new System.Object();
-    System.Object lockGravity = new System.Object();
-    System.Object lockRandom = new System.Object();
+    static Texture2D healthBarFull;
+    static Texture2D healthBarEmpty;
 
-    public EnemyBase(int health, int damage, float speed, bool canWanderThroughRegions, float spawnRate, Rarity rarity)        
+    System.Object lockGM = new System.Object();
+    System.Object lockRandom = new System.Object();
+    
+
+    float healthBarWidth = 50f;
+    float healthBarHeight = 10f;
+    float startingHealth;
+
+    public EnemyBase(int health, int damage, float speed, float spawnRate, Rarity rarity, Regions primaryRegion)        
     {
         Health = health;
+        startingHealth = Health;
         Damage = damage;
-        Speed = speed;
-        CanWanderThroughRegions = CanWanderThroughRegions;
+        Speed = speed;        
         IsAlive = true;
         Rarity = rarity;
         SpawnRate = spawnRate;
-
-        lock(lockGM)
+        PrimaryRegion = primaryRegion;
+        lock (lockGM)
             GameManager = GameManager ?? GameObject.FindGameObjectWithTag("GameManager").GetComponent<Manager>();
-        lock(lockGravity)
-            Gravity = Vector3.down * 5f;
         lock(lockRandom)
-            Random = Random ?? new System.Random();
+            Random = Random ?? new System.Random();   
+        
     }
 
-    public void OnUpdate()
+    public Regions PrimaryRegion
     {
-        if (GameManager.GameIsGoing && IsAlive)
-        {
-            ExecuteOnUpdate();
-        }
+        get;
+        protected set;
     }
 
     public bool IsAlive
@@ -62,12 +66,6 @@ public abstract class EnemyBase<T>
         set;
     }
 
-    public bool CanWanderThroughRegions
-    {
-        get;
-        private set;
-    }
-
     public Effects DamageEffect
     {
         get;
@@ -90,13 +88,23 @@ public abstract class EnemyBase<T>
     {
         get;
         private set;
+    }   
+
+    public Vector3 RemoveY(Vector3 direction)
+    {
+        return new Vector3(direction.x, 0f, direction.z);
     }
 
-    public abstract void ExecuteOnUpdate();
+    public Vector3 RemoveX(Vector3 direction)
+    {
+        return new Vector3(0f, direction.y, direction.z);
+    }
+
+    
 
     public abstract void Move(CharacterController characterController, Transform transform);
 
-    public abstract void Attack();
+    public abstract void Attack(CharacterController characterController, Transform transform);
 
     public abstract void DropItem();
 

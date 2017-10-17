@@ -7,7 +7,7 @@ using System.Linq;
 public class Manager : MonoBehaviour {
 
     Dictionary<Corners, Regions> mapAlignment;
-    
+    public static List<GameObject> Players;
 
     public bool GameIsGoing
     {
@@ -62,19 +62,21 @@ public class Manager : MonoBehaviour {
                     RegionPositions.Add(value[key], temp);
 
                 foreach(var obj in GameObject.FindGameObjectsWithTag("Enemy"))
-                    obj.SendMessage("SetEnemyWanderingBounds", tData);
+                    obj.SendMessage("SetWanderingBounds", tData);
             }
         }
     }
 
 	// Use this for initialization
 	void Start () {
-		
-	}
+
+            
+    }
 	
 	// Update is called once per frame
 	void Update () {
-        GameIsGoing = GameObject.FindGameObjectsWithTag("Player").Length > 0;
+        Players = GameObject.FindGameObjectsWithTag("Player").ToList();
+        GameIsGoing = Players.Count > 0;
 
     }
 }

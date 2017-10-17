@@ -243,7 +243,7 @@ public abstract class RegionBase
         bool canCreateMountain;
         List<float> heights = new List<float>();
 
-        Debug.Log(Length);
+        //Debug.Log(Length);
 
         for (int j = 0; j < Length; j++)
         {
