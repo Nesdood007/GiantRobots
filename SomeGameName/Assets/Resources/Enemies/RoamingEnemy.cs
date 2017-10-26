@@ -78,12 +78,26 @@ public abstract class RoamingEnemy : EnemyBase
     public void SetRandomStartingPosition(Transform transform)
     {
         var startingPosition = new Vector3(Random.Next() % WanderingBounds.width + WanderingBounds.xMin, 0, Random.Next() % WanderingBounds.height + WanderingBounds.yMin);
+        bool keepChecking;
+        do
+        {
+            keepChecking = false;
+            foreach (var p in Manager.Players)
+            {
+                if (Mathf.Abs(startingPosition.x - p.transform.position.x) < PlayerVisionRadius || Mathf.Abs(startingPosition.y - p.transform.position.y) < PlayerVisionRadius || Mathf.Abs(startingPosition.z - p.transform.position.z) < PlayerVisionRadius)
+                {
+                    keepChecking = true;
+                    startingPosition = new Vector3(Random.Next() % WanderingBounds.width + WanderingBounds.xMin, 0, Random.Next() % WanderingBounds.height + WanderingBounds.yMin);
+                }
+        }
+        } while (keepChecking);
+
         transform.position = new Vector3(startingPosition.x, Terrain.activeTerrain.SampleHeight(startingPosition) + 2f, startingPosition.z);
     }
 
     public void SetWanderingBounds()
     {
-        var regions = GameObject.FindGameObjectWithTag("GameManager").GetComponent<Manager>().RegionPositions;
+        var regions = GameManager.RegionPositions;
 
         if (regions.Keys.Contains(PrimaryRegion))
         {
@@ -118,9 +132,10 @@ public abstract class RoamingEnemy : EnemyBase
     public bool IsInVisionOfPlayer(Transform transform)
     {
         TargetPlayer = null;
+        
         foreach (var p in Manager.Players)
         {
-            if (Vector3.Distance(p.transform.position, transform.position) <= PlayerVisionRadius)
+            if(Vector3.Distance(transform.position, p.transform.position) < PlayerVisionRadius)
             {
                 TargetPlayer = p;
                 TargetPlayerCollider = TargetPlayer.GetComponent<BoxCollider>();

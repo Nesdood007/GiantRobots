@@ -48,7 +48,7 @@ public abstract class EnemyBase
         get; set;
     }
 
-    public int Health
+    public float Health
     {
         get;
         private set;
@@ -99,13 +99,19 @@ public abstract class EnemyBase
     {
         return new Vector3(0f, direction.y, direction.z);
     }
-
     
+    public void TakeDamage(float damage)
+    {
+        if (damage >= 0)
+            Health -= damage;
+        if (Health <= 0)
+            IsAlive = false;
+    }
 
     public abstract void Move(CharacterController characterController, Transform transform);
 
     public abstract void Attack(CharacterController characterController, Transform transform);
 
-    public abstract void DropItem();
+    public abstract void DropItem(Transform transform);
 
 }

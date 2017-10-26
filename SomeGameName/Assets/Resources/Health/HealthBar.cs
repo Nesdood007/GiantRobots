@@ -42,7 +42,7 @@ public class HealthBar : MonoBehaviour {
 	void Update () {
        
         full.transform.localScale = new Vector3(startingScale.x * (currentHealth/totalHealth), startingScale.y, startingScale.z);
-        empty.transform.localScale = new Vector3(startingScale.x * (1-(currentHealth / totalHealth)), startingScale.y, startingScale.z);
+       // empty.transform.localScale = new Vector3(startingScale.x * (1-(currentHealth / totalHealth)), startingScale.y, startingScale.z);
     }
 
     public void OnEnable()

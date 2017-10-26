@@ -204,7 +204,7 @@ public abstract class RegionBase
 
     public bool TextureIsInGrasslands(int x, int y)
     {
-        return Mathf.Pow(Length/2f - x , 2) + Mathf.Pow(Length / 2f - y, 2) <= GrassLandsRadius * GrassLandsRadius;
+        return Mathf.Pow(Length/2f - x , 2) + Mathf.Pow(Length / 2f - y, 2) <= (GrassLandsRadius * GrassLandsRadius)*.33;
     }
 
     protected float GetMaxHeight(List<float> heights)
