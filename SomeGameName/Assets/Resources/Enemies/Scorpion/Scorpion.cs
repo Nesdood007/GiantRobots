@@ -6,7 +6,6 @@ using System.Linq;
 
 public class Scorpion : MonoBehaviour
 {
-    public bool AreDebugging = false;
     public bool canWanderThroughRegions = false;
     public int damage = 5;
     public int health = 10;
@@ -79,7 +78,7 @@ public class Scorpion : MonoBehaviour
         oldCanBegin = scorpionObject.CanBegin;
 
         //DEBUG
-        if(AreDebugging && scorpionObject.CanBegin)
+        if(Manager.DEBUG && scorpionObject.CanBegin)
         {
             scorpionObject.Speed = speed;
             scorpionObject.AttackStartingRange = playerAttackRadius;
@@ -105,9 +104,8 @@ public class Scorpion : MonoBehaviour
     {
         if (!scorpionObject.IsAlive || !ScorpionObject.GameManager.GameIsGoing)
             return;
-        if (collider.gameObject.tag == "Enemy")
-            scorpionObject.SetRandomDirection(transform);
-        else if (collider.gameObject.tag == "Player")
+       
+        if (collider.gameObject.tag == "Player")
         {
             scorpionObject.IsRunningAtPlayer = false;
             collider.gameObject.GetComponent<Combat>().TakeDamage(scorpionObject.Damage);
@@ -123,7 +121,11 @@ public class Scorpion : MonoBehaviour
                 else if (swordAbilities.State != SwordAbilities.SwordState.Defending && swordAbilities.State != SwordAbilities.SwordState.ReturnDefending)
                     scorpionObject.TakeDamage(swordAbilities.Damage);
             }
+        } else if(collider.gameObject.tag == "Enemy"){
+            scorpionObject.SetRandomDirection(transform);
         }
+
+        scorpionObject.OnTriggerEnter(collider, transform);
 
         if (!scorpionObject.IsAlive)
         {
@@ -219,15 +221,11 @@ public class ScorpionObject : RoamingEnemy
 
     public override void DropItem(Transform transform)
     {
-        foreach(var obj in Manager.ResourcePrefabs)
-        {
-            if (PrimaryRegion == (obj.transform.GetChild(0).GetComponentsInParent(typeof(ResourceBase), true).First() as ResourceBase).primaryRegion)
-            {
-                GameObject.Instantiate(obj, new Vector3(transform.position.x, Terrain.activeTerrain.SampleHeight(transform.position) + transform.position.y, transform.position.z), Quaternion.Euler(Vector3.zero));
-                return;
-            }
-        }
-
-        Debug.Log("No suitable resource to drop found");
+        var probabilityOfRare = Rarity == Rarity.Common ? .05f : Rarity == Rarity.Uncommon ? .45f : 1f;
+        var resource = Manager.GetResource(PrimaryRegion, probabilityOfRare);
+        if(resource == null)
+            Debug.Log("No suitable resource to drop found");
+        else
+            GameObject.Instantiate(resource, new Vector3(transform.position.x, Terrain.activeTerrain.SampleHeight(transform.position) + transform.position.y, transform.position.z), Quaternion.Euler(Vector3.zero));                
     }
 }

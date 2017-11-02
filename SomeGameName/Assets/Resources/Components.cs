@@ -7,7 +7,7 @@ public abstract class BaseComponent
 {
     ResourceBase additionalResource;
 
-    public BaseComponent(Components type, Dictionary<CraftedResources, int> requires)
+    public BaseComponent(Components type, Dictionary<CraftedResourcesType, int> requires)
     {
 
         if (!IsValidType(type))
@@ -15,11 +15,11 @@ public abstract class BaseComponent
         else
         {
             Type = type;
-            Requires = requires ?? new Dictionary<CraftedResources, int>();
+            Requires = requires ?? new Dictionary<CraftedResourcesType, int>();
         }
     }
 
-    public BaseComponent(Components type, Dictionary<CraftedResources, int> requires, ResourceBase additionalResource)
+    public BaseComponent(Components type, Dictionary<CraftedResourcesType, int> requires, ResourceBase additionalResource)
         : this(type, requires)
     {
         if (!IsValidAdditionalResource(additionalResource))
@@ -39,7 +39,7 @@ public abstract class BaseComponent
         private set;
     }
 
-    protected Dictionary<CraftedResources, int> Requires
+    protected Dictionary<CraftedResourcesType, int> Requires
     {
         get;
         private set;
@@ -60,7 +60,7 @@ public class Droid : BaseComponent
 {
     ResourceBase additionalResource;
 
-    public Droid(Components type, Dictionary<CraftedResources, int> requires, List<Components> buildsInto, Gauges damage, Gauges health, bool canLeaveBase)
+    public Droid(Components type, Dictionary<CraftedResourcesType, int> requires, List<Components> buildsInto, Gauges damage, Gauges health, bool canLeaveBase)
         : base(type, requires)
     {
         Damage = damage;
@@ -68,7 +68,7 @@ public class Droid : BaseComponent
         CanLeaveBase = canLeaveBase;
     }
 
-    public Droid(Components type, Dictionary<CraftedResources, int> requires, List<Components> buildsInto, Gauges damage, Gauges health, bool canLeaveBase, ResourceBase additionalResource)
+    public Droid(Components type, Dictionary<CraftedResourcesType, int> requires, List<Components> buildsInto, Gauges damage, Gauges health, bool canLeaveBase, ResourceBase additionalResource)
         : base(type, requires, additionalResource)
     {
         Damage = damage;
@@ -128,7 +128,7 @@ public class Armor : BaseComponent
     Dictionary<Effects, int> resistances;
     int strength = -1;
 
-    public Armor(Components type, Dictionary<CraftedResources, int> requires)
+    public Armor(Components type, Dictionary<CraftedResourcesType, int> requires)
         : base(type, requires)
     {
        
@@ -178,15 +178,15 @@ public class Armor : BaseComponent
         }
     }
 
-    static Effects? GetEffect(CraftedResources resource)
+    static Effects? GetEffect(CraftedResourcesType resource)
     {
         switch(resource)
         {
-            case CraftedResources.S_316:
+            case CraftedResourcesType.S_316:
                 return Effects.Corrosion;
-            case CraftedResources.S_316Ti:
+            case CraftedResourcesType.S_316Ti:
                 return Effects.Heat;
-            case CraftedResources.S_430:
+            case CraftedResourcesType.S_430:
                 return Effects.Cold;
         }
         return null;
@@ -199,7 +199,7 @@ public class Armor : BaseComponent
             if (strength < 0)
             {
                 strength = 0;
-                var count = new Dictionary<CraftedResources, int>();
+                var count = new Dictionary<CraftedResourcesType, int>();
 
                 foreach (var i in Requires)
                 {
@@ -224,7 +224,7 @@ public class Weapon : BaseComponent
 {
     Dictionary<Effects, int> effects;
 
-    public Weapon(Components type, Dictionary<CraftedResources, int> requires, Gauges attackSpeed, Gauges damage, bool requiresProficiency, bool isTwohanded)
+    public Weapon(Components type, Dictionary<CraftedResourcesType, int> requires, Gauges attackSpeed, Gauges damage, bool requiresProficiency, bool isTwohanded)
         : base(type, requires)
     {
         RequiresProficiency = requiresProficiency;
@@ -301,15 +301,15 @@ public class Weapon : BaseComponent
         }
     }
 
-    static Effects? GetEffect(CraftedResources resource)
+    static Effects? GetEffect(CraftedResourcesType resource)
     {
         switch (resource)
         {
-            case CraftedResources.S_316:
+            case CraftedResourcesType.S_316:
                 return Effects.Corrosion;
-            case CraftedResources.S_316Ti:
+            case CraftedResourcesType.S_316Ti:
                 return Effects.Heat;
-            case CraftedResources.S_430:
+            case CraftedResourcesType.S_430:
                 return Effects.Cold;
         }
         return null;

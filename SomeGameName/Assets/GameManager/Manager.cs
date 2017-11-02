@@ -3,18 +3,37 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using System.Linq;
+using System.Collections.ObjectModel;
 
 public class Manager : MonoBehaviour {
 
     Dictionary<Corners, Regions> mapAlignment;
+    public static bool DEBUG = true;
     public static List<GameObject> Players;
     public static List<GameObject> ResourcePrefabs;
+    public static List<Texture2D> ResourceTextures;
+    public static List<GameObject> CommonResourcePrefabs;
+    public static List<GameObject> RareResourcePrefabs;
+    public static List<GameObject> CraftedResourcePrefabs;
     public static List<GameObject> EnemyPrefabs;
+    public static List<GameObject> BasePrefabs;
+    public static List<GameObject> Bases;
+    public static List<Material> SkyBoxes;
     public static readonly int NumberOfCommonEnemiesAtOneTime = 5;
     public static List<GameObject> Enemies;
+    public static List<GameObject> Trees;
+    public static List<Team> Teams;
 
-    System.Random rand;
+    static System.Random rand;
     Vector3 currentPosition;
+    TerrainData tData;
+
+    public static T GetInactiveCompoent<T>(GameObject gameobject)
+        where T : Component
+    {
+        var c = gameobject.transform.GetChild(0).GetComponentsInParent(typeof(T), true);
+        return c.Count() == 0 ? null : c[0] as T;
+    }
 
     public bool GameIsGoing
     {
@@ -39,7 +58,7 @@ public class Manager : MonoBehaviour {
 
             //var pos = GameObject.FindGameObjectWithTag("Terrain").transform.position;
             var terrain = GameObject.FindGameObjectWithTag("Terrain");
-            var tData= terrain.GetComponent<Terrain>().terrainData;
+            tData= terrain.GetComponent<Terrain>().terrainData;
             var bounds = new Bounds();
             bounds.SetMinMax(Vector3.zero, new Vector2(tData.size.x, tData.size.z));
 
@@ -72,16 +91,15 @@ public class Manager : MonoBehaviour {
                 
             }
 
-            SpawnEnemies();
-
-            foreach (var obj in GameObject.FindGameObjectsWithTag("Enemy"))
-                obj.SendMessage("SetWanderingBounds", tData);
+           
         }
     }
 
     private void Awake()
     {
         SetProperties();
+
+
         if(GameIsGoing)
         {
             foreach(var p in Players)
@@ -90,6 +108,35 @@ public class Manager : MonoBehaviour {
             }
             
         }
+
+        (new CreateWalls()).BuildWalls(Resources.LoadAll<GameObject>("Buildings/Wall").First(w => w.GetType().Name.Contains("GameObject")));
+
+        SpawnTrees();
+
+        var baseSpawner = new BaseSpawn();
+        var firstBase = RegionPositions.Keys.ToArray()[rand.Next() % RegionPositions.Count];
+        Bases.Add(baseSpawner.SpawnBase(RegionPositions[firstBase]));
+        Teams.Add(new Team(global::Teams.Alpha, Bases.First()));
+        Regions secondBase;
+        do
+        {
+            secondBase = RegionPositions.Keys.ToArray()[rand.Next() % RegionPositions.Count];
+        } while (secondBase == firstBase);
+
+        Bases.Add(baseSpawner.SpawnBase(RegionPositions[secondBase]));
+        Teams.Add(new Team(global::Teams.Beta, Bases.Last()));
+
+        
+
+        SpawnEnemies();
+
+        SetSkybox();
+
+        foreach (var b in Bases)
+            GameObject.Destroy(b.GetComponent<BoxCollider>());
+
+        foreach (var obj in GameObject.FindGameObjectsWithTag("Enemy"))
+            obj.SendMessage("SetWanderingBounds", tData);
     }
 
     // Use this for initialization
@@ -108,8 +155,20 @@ public class Manager : MonoBehaviour {
     {
         rand = new System.Random();
         UpdateProperties();
+
         ResourcePrefabs = Resources.LoadAll<GameObject>("Objects/").ToList();
+        ResourceBase component;
+        CraftedResources component2;
+        CommonResourcePrefabs = ResourcePrefabs.Where((r) => (component = GetInactiveCompoent<ResourceBase>(r)) != null && component.rarity == Rarity.Common).ToList();
+        RareResourcePrefabs = ResourcePrefabs.Where((r) => (component = GetInactiveCompoent<ResourceBase>(r)) != null && component.rarity == Rarity.Rare).ToList();
+        CraftedResourcePrefabs = ResourcePrefabs.Where((r) => (component2 = GetInactiveCompoent<CraftedResources>(r)) != null).ToList();
         EnemyPrefabs = Resources.LoadAll<GameObject>("Enemies/Prefabs").ToList();
+        ResourceTextures = Resources.LoadAll<Texture2D>("Textures/").ToList();
+        BasePrefabs = Resources.LoadAll<GameObject>("Buildings/Bases/").Where(obj => obj.name.ToLower().Contains("base_")).ToList();
+        Bases = new List<GameObject>();
+        SkyBoxes = Resources.LoadAll<Material>("SkyBoxes/").ToList();
+        Teams = new List<global::Team>();
+        Trees = Resources.LoadAll<GameObject>("Trees/").ToList();
     }
 
     void UpdateProperties()
@@ -117,6 +176,23 @@ public class Manager : MonoBehaviour {
         Players = GameObject.FindGameObjectsWithTag("Player").ToList();
         Enemies = GameObject.FindGameObjectsWithTag("Enemy").ToList();
         GameIsGoing = Players.Count > 0;        
+    }
+
+    void SetSkybox()
+    {
+        RenderSettings.skybox = SkyBoxes.ToArray()[rand.Next() % SkyBoxes.Count];
+    }
+
+    void SpawnTrees()
+    {
+        List<TreeBase> treeClasses = new List<TreeBase>();
+        foreach(var r in RegionPositions.Keys)
+        {
+            treeClasses.Add(new TreeBase(RegionPositions[r], r, r == Regions.Desert ? RatingScale.Two : RatingScale.Eight));
+        }
+
+        foreach (var t in treeClasses)
+            t.SpawnTrees();
     }
 
     public void SpawnEnemies()
@@ -138,12 +214,51 @@ public class Manager : MonoBehaviour {
                 var enemy = GetCommonEnemy(region);
                 if(enemy != null)
                 {
-                    Instantiate(enemy, GetNextPosition(), Quaternion.Euler(Vector3.zero));
+                    var obj = Instantiate(enemy, GetNextPosition(), Quaternion.Euler(Vector3.zero));
+                    var scorpionCollider = obj.GetComponent<BoxCollider>();
+                    
+                    foreach (var b in Bases)
+                    {
+                        var baseCollider = b.GetComponent<BoxCollider>();
+                        if (baseCollider.bounds.Contains(scorpionCollider.bounds.min) || baseCollider.bounds.Contains(scorpionCollider.bounds.max) 
+                            || baseCollider.bounds.Contains(new Vector3(scorpionCollider.bounds.min.x, scorpionCollider.bounds.min.y, scorpionCollider.bounds.max.z)) || baseCollider.bounds.Contains(new Vector3(scorpionCollider.bounds.max.x, scorpionCollider.bounds.max.y, scorpionCollider.bounds.min.z)))
+                        {
+                            GameObject.Destroy(obj);
+                            i--;
+                            break;
+                        }
+                    }
                 }
 
             }
 
         }
+    }
+
+    public static Teams AssignPlayerToTeam(GameObject player, out Vector3 startingPosition)
+    {
+        Teams teamName;
+        Team team;
+        if (Teams.First().Players.Count <= Teams.Last().Players.Count)
+        {
+            team = Teams.First();
+            team.AddPlayer(player);
+        }
+        else
+        {
+            team = Teams.Last();
+            team.AddPlayer(player);
+        }
+
+        teamName = team.Name;
+
+        var spawnPoint = team.GetUnusedSpawnPoint();
+        if (spawnPoint == null)
+            throw new ArgumentOutOfRangeException();
+
+        startingPosition = spawnPoint.Value;
+
+        return teamName;
     }
 
     public Vector3 GetNextPosition()
@@ -173,7 +288,7 @@ public class Manager : MonoBehaviour {
         var regionEnemies = new List<GameObject>();
         foreach (var e in EnemyPrefabs)
         {
-            var properties = (e.transform.GetChild(0).GetComponentsInParent(typeof(EnemySetupProps), true)[0] as EnemySetupProps);
+            var properties = GetInactiveCompoent<EnemySetupProps>(e);
             if (properties.primaryRegion == region && properties.rarity == Rarity.Common)
             {
                 regionEnemies.Add(e);
@@ -184,8 +299,94 @@ public class Manager : MonoBehaviour {
         return regionEnemies.Count == 0 ? null : regionEnemies[rand.Next() % regionEnemies.Count];
     }
 
+    public static GameObject GetResource(Regions region, float probabilityOfRareDrop = 0)
+    {
+        var areSpawningRare = probabilityOfRareDrop != 0 && (probabilityOfRareDrop > 1 || rand.Next() % 100 + 1 <= probabilityOfRareDrop * 100);
+        var validResources = new List<GameObject>();
+        foreach(var r in areSpawningRare? RareResourcePrefabs : CommonResourcePrefabs)
+        {
+            var properties = GetInactiveCompoent<ResourceBase>(r);
+            if (properties == null)
+                continue;
+            if (properties.primaryRegion == region)
+                validResources.Add(r);
+        }
+
+        return validResources.Count == 0 ? null : validResources[rand.Next() % validResources.Count];
+    }
+
+    public static GameObject GetReource(string name)
+    {
+        return ResourcePrefabs.FirstOrDefault(r => r.name.ToLower().Contains(name.ToLower()));        
+    }
+
     //public static GameObject GetResource(string name)
     //{
 
     //}
 }
+
+public enum Teams
+{
+    Alpha,
+    Beta
+}
+
+public class Team
+{
+    List<GameObject> players;
+    GameObject baseObj;
+    List<string> usedSpawnPoints;
+
+    public Team(Teams name, GameObject baseObj)
+    {
+        Name = name;
+        this.baseObj = baseObj;
+        players = new List<GameObject>();
+        usedSpawnPoints = new List<string>();
+    }
+
+    public Teams Name
+    {
+        get;
+        private set;
+    }
+
+    public ReadOnlyCollection<GameObject> Players
+    {
+        get { return players.AsReadOnly(); }
+    }
+
+    public void AddPlayer(GameObject player)
+    {
+        players.Add(player);
+    }
+
+    public Vector3 GetBasePosition()
+    {
+        return baseObj.transform.position;
+    }
+
+    public Vector3? GetUnusedSpawnPoint()
+    {
+        var spawnPointsParent = baseObj.transform.Find("SpawnPoints");
+        for(int i = 0; i < baseObj.transform.Find("SpawnPoints").childCount; i++ )
+        {
+            var point = spawnPointsParent.GetChild(i);
+            if (!usedSpawnPoints.Contains(point.gameObject.name))
+            {
+                usedSpawnPoints.Add(point.name);
+                return point.position;
+            }
+        }
+
+        return null;
+    }
+
+    public bool PointIsInBase(Vector3 point)
+    {
+        return baseObj.GetComponent<BoxCollider>().bounds.Contains(point);
+    }
+}
+
+

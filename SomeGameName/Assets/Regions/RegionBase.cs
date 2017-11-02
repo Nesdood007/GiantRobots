@@ -14,7 +14,7 @@ public abstract class RegionBase
     public readonly float sin45Deg = Mathf.Abs(Mathf.Sin(Mathf.PI/4f));
     public static readonly float GrasslandFadeRadius = 50f;
 
-    public RegionBase(int mapResoultion, int terrainHeight, Corners corner, RatingScale maxHeight, RatingScale minHeight, RatingScale hillHeight, RatingScale hillyness, RatingScale hillWidth)
+    public RegionBase(int mapResoultion, int terrainHeight, Corners corner, Regions region, RatingScale maxHeight, RatingScale minHeight, RatingScale hillHeight, RatingScale hillyness, RatingScale hillWidth)
     {
         Length = mapResoultion / 2;
         ResetMap();
@@ -28,6 +28,7 @@ public abstract class RegionBase
         MaxNumberOfMountainsAtOneTime = 5;
         HillWidth = hillWidth;
         TerrainHeight = terrainHeight;
+        Region = region;
     }
 
     protected int TerrainHeight
@@ -56,6 +57,11 @@ public abstract class RegionBase
     {
         get;
         private set;
+    }
+
+    public Regions Region
+    {
+        get; private set;
     }
 
     public Corners Corner
@@ -238,6 +244,8 @@ public abstract class RegionBase
         }
     }
 
+    public virtual void AssignTextures(Corners corner, float terrainMaxHeight, ref float[,,] map) { }
+
     public virtual float[,] CreateMountains()
     {
         bool canCreateMountain;
@@ -301,13 +309,13 @@ public class Desert : RegionBase
     Texture[] offTerrains;
 
     public Desert(int mapResoultion, int terrainHeight, Corners corner)
-       : base(mapResoultion, terrainHeight, corner, RatingScale.One, RatingScale.Zero, RatingScale.Three, RatingScale.One, RatingScale.Two)
+       : base(mapResoultion, terrainHeight, corner, Regions.Desert, RatingScale.One, RatingScale.Zero, RatingScale.Three, RatingScale.One, RatingScale.Two)
     {
        
     }
 
     public Desert(int mapResoultion, int terrainHeight, Corners corner, Texture sand, Texture[] offTerrains)
-        : base(mapResoultion, terrainHeight, corner, RatingScale.One, RatingScale.Zero, RatingScale.Three, RatingScale.One, RatingScale.Two)
+        : base(mapResoultion, terrainHeight, corner, Regions.Desert, RatingScale.One, RatingScale.Zero, RatingScale.Three, RatingScale.One, RatingScale.Two)
     {
         this.sand = sand;
         this.offTerrains = offTerrains;
@@ -322,7 +330,7 @@ public class Desert : RegionBase
 
     public override float[,,] GetTerrainMap(TerrainData data)
     {
-        var map = new float[data.alphamapWidth, data.alphamapHeight, 2];
+        var map = new float[data.alphamapWidth, data.alphamapHeight, Terrain.activeTerrain.terrainData.splatPrototypes.Length];
         for (int j = 0; j < data.alphamapHeight; j++)
         {
             for (int i = 0; i < data.alphamapWidth; i++)
@@ -370,13 +378,13 @@ public class Mountains : RegionBase
     Texture[] offTerrains;
 
     public Mountains(int mapResoultion, int terrainHeight, Corners corner)
-       : base(mapResoultion, terrainHeight, corner, RatingScale.Ten, RatingScale.Five, RatingScale.Eight, RatingScale.Eight, RatingScale.Three)
+       : base(mapResoultion, terrainHeight, corner, Regions.Mountains, RatingScale.Ten, RatingScale.Five, RatingScale.Eight, RatingScale.Eight, RatingScale.Three)
     {
 
     }
 
     public Mountains(int mapResoultion, int terrainHeight, Corners corner, Texture sand, Texture[] offTerrains)
-        : base(mapResoultion, terrainHeight, corner, RatingScale.Ten, RatingScale.Five, RatingScale.Eight, RatingScale.Eight, RatingScale.Three)
+        : base(mapResoultion, terrainHeight, corner, Regions.Mountains, RatingScale.Ten, RatingScale.Five, RatingScale.Eight, RatingScale.Eight, RatingScale.Three)
     {
         this.sand = sand;
         this.offTerrains = offTerrains;
@@ -391,7 +399,7 @@ public class Mountains : RegionBase
 
     public override float[,,] GetTerrainMap(TerrainData data)
     {
-        var map = new float[data.alphamapWidth, data.alphamapHeight, 2];
+        var map = new float[data.alphamapWidth, data.alphamapHeight, Terrain.activeTerrain.terrainData.splatPrototypes.Length];
         for (int j = 0; j < data.alphamapHeight; j++)
         {
             for (int i = 0; i < data.alphamapWidth; i++)
@@ -430,6 +438,65 @@ public class Mountains : RegionBase
         return map;
     }
 
+    public override void AssignTextures(Corners corner, float terrainMaxHeight, ref float[,,] map)
+    {
+        try
+        {
+            var length = map.GetLength(0);
+            var terrain = Terrain.activeTerrain;
+
+            var jStart = (int)(corner == Corners.TopRight || corner == Corners.TopLeft ? 0 : length * .5f);
+            var jEnd = (int)(corner == Corners.TopLeft || corner == Corners.TopLeft ? length * .5 : length);
+            var iStart = (int)(corner == Corners.TopRight || corner == Corners.BottomRight ? 0 : length * .5f);
+            var iEnd = (int)(corner == Corners.TopRight || corner == Corners.BottomRight ? length * .5 : length);
+            var divisor = terrain.terrainData.size.x/length;
+
+            for (int j = jStart; j < jEnd; j++)
+            {
+                for (int i = iStart; i < iEnd; i++)
+                {
+                    map[j, i, (int)TextureIndexes.Sand] = 0;
+                    if (TextureIsInGrasslands(i, j))
+                    {
+                        map[j, i, (int)TextureIndexes.MountainGrey] = 0;
+                        map[j, i, (int)TextureIndexes.MountainSnow] = 0;
+                        map[j, i, (int)TextureIndexes.MountainGrass] = 0;
+                        map[j, i, (int)TextureIndexes.Grasslands] = 1f;
+                    }
+                    else
+                    {
+                        map[j, i, (int)TextureIndexes.Grasslands] = 0f;
+                        var h = terrain.SampleHeight(new Vector3(i * divisor, 0, j * divisor));
+                        var percent = h / terrainMaxHeight;
+                        if (percent > .5)
+                        {
+                            percent = (percent - .5f) * 2;
+                            map[j, i, (int)TextureIndexes.MountainGrass] = 0;
+                            map[j, i, (int)TextureIndexes.MountainGrey] = 1 - percent;
+                            map[j, i, (int)TextureIndexes.MountainSnow] = percent;
+                        }
+                        else if (percent < .5)
+                        {
+                            percent = percent * 2;
+                            map[j, i, (int)TextureIndexes.MountainGrass] = 1 - percent;
+                            map[j, i, (int)TextureIndexes.MountainGrey] = percent;
+                            map[j, i, (int)TextureIndexes.MountainSnow] = 0;
+                        }
+                        else
+                        {
+                            map[j, i, (int)TextureIndexes.MountainGrass] = 0;
+                            map[j, i, (int)TextureIndexes.MountainGrey] = 1;
+                            map[j, i, (int)TextureIndexes.MountainSnow] = 0;
+                        }
+
+                    }
+                }
+            }
+        } catch(System.Exception e)
+        {
+            Debug.Log(e.Message);
+        }
+    }
 
 }
 

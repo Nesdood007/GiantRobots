@@ -30,6 +30,7 @@ public abstract class EnemyBase
         Rarity = rarity;
         SpawnRate = spawnRate;
         PrimaryRegion = primaryRegion;
+        StartHealth = Health;
         lock (lockGM)
             GameManager = GameManager ?? GameObject.FindGameObjectWithTag("GameManager").GetComponent<Manager>();
         lock(lockRandom)
@@ -48,10 +49,16 @@ public abstract class EnemyBase
         get; set;
     }
 
-    public float Health
+    public float StartHealth
     {
         get;
         private set;
+    }
+
+    public float Health
+    {
+        get;
+        protected set;
     }
 
     public int Damage

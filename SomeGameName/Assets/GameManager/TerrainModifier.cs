@@ -11,6 +11,10 @@ public class TerrainModifier : MonoBehaviour
     Terrain terrain;
     public Texture2D desertSand;
     public Texture2D grassLand;
+    public Texture2D mountainGrey;
+    public Texture2D mountainGrass;
+    public Texture2D mountainSnow;
+    
     public static Cicle Grasslands;
 
     bool useSingleMap = false;
@@ -21,12 +25,7 @@ public class TerrainModifier : MonoBehaviour
         var height = terrain.terrainData.heightmapHeight;
         //heightMapGenerator = new GenerateHeightMap(length, length);
 
-        var s = new SplatPrototype();
-        s.texture = desertSand;
-        var g = new SplatPrototype();
-        g.texture = grassLand;
-
-        terrain.terrainData.splatPrototypes = new SplatPrototype[2] { s, g };
+        SetTextures();
 
         var regions = new List<RegionBase>() { new Desert(length, height, Corners.TopRight), new Mountains(length, height, Corners.TopLeft), new Desert(length, height, Corners.BottomLeft), new Desert(length, height, Corners.BottomRight) };
         
@@ -68,11 +67,8 @@ public class TerrainModifier : MonoBehaviour
    
         terrain.terrainData.SetHeights(0, 0, map);
 
-        var terrainMap = regions.First().GetTerrainMap(terrain.terrainData);
-        regions.First().SetGrasslands(ref terrainMap);
-
         //TopLeft
-        terrain.terrainData.SetAlphamaps(0, 0, terrainMap);
+       
 
         Grasslands = new Cicle(2*(regions.First().GrassLandsRadius/ terrain.terrainData.heightmapResolution)* terrain.terrainData.size.x, new Vector2(terrain.terrainData.size.x*.5f, terrain.terrainData.size.z*.5f));
 
@@ -80,7 +76,26 @@ public class TerrainModifier : MonoBehaviour
         foreach (var r in regions)
             mapAlignment.Add(r.Corner, (Regions)Enum.Parse(typeof(Regions), r.GetType().Name.ToString()));
 
-        GameObject.FindGameObjectWithTag("GameManager").GetComponent<Manager>().MapAlignment = mapAlignment;
+        var manager = GameObject.FindGameObjectWithTag("GameManager").GetComponent<Manager>();
+        manager.MapAlignment = mapAlignment;
+
+        var maxHeight = -1f;
+        for (int j = 0; j < map.GetLength(1); j++)
+        {
+            for (int i = 0; i < map.GetLength(0); i++) { 
+                if (map[j,i] > maxHeight)
+                    maxHeight = map[j, i];
+             }
+        }
+
+        var terrainMap = regions.First().GetTerrainMap(terrain.terrainData);
+        regions.First().SetGrasslands(ref terrainMap);
+        foreach (var region in regions)
+            region.AssignTextures(mapAlignment.Keys.First(k=>mapAlignment[k] == region.Region), maxHeight * height * RegionBase.TerrainMaxHeight, ref terrainMap);
+
+         terrain.terrainData.SetAlphamaps(0, 0, terrainMap);
+
+        
 
     }
 
@@ -94,6 +109,23 @@ public class TerrainModifier : MonoBehaviour
     void Update()
     {
 
+    }
+
+    void SetTextures()
+    {
+        var s = new SplatPrototype();
+        s.texture = desertSand;
+        var g = new SplatPrototype();
+        g.texture = grassLand;
+        var mGrass = new SplatPrototype();
+        mGrass.texture = mountainGrass;
+        var mGrey = new SplatPrototype();
+        mGrey.texture = mountainGrey;
+        var gSnow = new SplatPrototype();
+        gSnow.texture = mountainSnow;
+
+
+        terrain.terrainData.splatPrototypes = new SplatPrototype[5] { s, g, mGrass, mGrey, gSnow };
     }
 
     float[,] RotateArrayRight(float[,] array)
@@ -179,4 +211,13 @@ public class TerrainModifier : MonoBehaviour
     }
 
 
+}
+
+public enum TextureIndexes
+{
+    Sand,
+    Grasslands,
+    MountainGrass,
+    MountainGrey,    
+    MountainSnow
 }

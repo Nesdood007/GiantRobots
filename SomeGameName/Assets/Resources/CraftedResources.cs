@@ -3,11 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-public abstract class BaseCraftedResources
-{
+public class CraftedResources : MonoBehaviour {
+
+    public CraftedResourcesType type;
     ResourceBase additionalResource;
 
-    protected BaseCraftedResources(CraftedResources type, Dictionary<ResourceTypes, int> requires, List<Components> buildsInto)
+    void Start()
+    {
+        Type = type;        
+    }
+    
+    protected CraftedResources(CraftedResourcesType type, Dictionary<ResourceTypes, int> requires, List<Components> buildsInto)
     {
 
         if (!IsValidType(type))
@@ -20,7 +26,7 @@ public abstract class BaseCraftedResources
         }
     }
 
-    protected BaseCraftedResources(CraftedResources type, Dictionary<ResourceTypes, int> requires, List<Components> buildsInto, ResourceBase additionalResource)
+    protected CraftedResources(CraftedResourcesType type, Dictionary<ResourceTypes, int> requires, List<Components> buildsInto, ResourceBase additionalResource)
         : this(type, requires, buildsInto)
     {
         if (!IsValidAdditionalResource(additionalResource))
@@ -46,7 +52,7 @@ public abstract class BaseCraftedResources
         private set;
     }
 
-    public CraftedResources Type
+    public CraftedResourcesType Type
     {
         get;
         private set;
@@ -68,16 +74,49 @@ public abstract class BaseCraftedResources
         set;
     }
 
-    protected abstract bool IsValidAdditionalResource(ResourceBase resource);
+    protected virtual bool IsValidAdditionalResource(ResourceBase resource) { return false;  }
 
-    protected abstract bool IsValidType(CraftedResources type);
+    protected virtual bool IsValidType(CraftedResourcesType type) { return false; }
+
+    public static ResourceTypes[] GetRequirements(CraftedResourcesType type)
+    {
+        var requirements = new List<ResourceTypes>();
+        if(type.ToString().ToLower()[0] == 's')
+            requirements.AddRange(new ResourceTypes[] { ResourceTypes.Iron, ResourceTypes.Magnesium, ResourceTypes.Chromite });
+        else if (type.ToString().ToLower()[0] == 'b')
+            requirements.AddRange(new ResourceTypes[] { ResourceTypes.Coal, ResourceTypes.Cobalt });
+
+        switch (type)
+        {            
+            case CraftedResourcesType.S_316:
+                requirements.Add(ResourceTypes.Molybdenum);
+                break;
+            case CraftedResourcesType.S_316Ti:
+                requirements.Add(ResourceTypes.Titanium);
+                break;
+            case CraftedResourcesType.S_430:
+                requirements.Add(ResourceTypes.Nickel);
+                break;
+            case CraftedResourcesType.S_440C:
+                requirements.Add(ResourceTypes.Carbon);
+                break;           
+            case CraftedResourcesType.B_Lithium:
+                requirements.Add(ResourceTypes.Lithium);
+                break;
+            case CraftedResourcesType.B_Plasma:
+                requirements.Add(ResourceTypes.Plasma);
+                break;                
+        }
+
+        return requirements.ToArray();
+    }
 }
 
-public class Steel : BaseCraftedResources
+public class Steel : CraftedResources
 {
     ResourceBase additionalResource;
 
-    public Steel(CraftedResources type, Dictionary<ResourceTypes, int> requires, List<Components> buildsInto, Gauges strength, Effects resistance, Gauges shineyness)
+    public Steel(CraftedResourcesType type, Dictionary<ResourceTypes, int> requires, List<Components> buildsInto, Gauges strength, Effects resistance, Gauges shineyness)
         : base(type, requires, buildsInto)
     {
         Strength = strength;
@@ -85,7 +124,7 @@ public class Steel : BaseCraftedResources
         Shineyness = shineyness;
     }
 
-    public Steel(CraftedResources type, Dictionary<ResourceTypes, int> requires, List<Components> buildsInto, Gauges strength, Effects resistance, Gauges shineyness, ResourceBase additionalResource)
+    public Steel(CraftedResourcesType type, Dictionary<ResourceTypes, int> requires, List<Components> buildsInto, Gauges strength, Effects resistance, Gauges shineyness, ResourceBase additionalResource)
         : base(type, requires, buildsInto, additionalResource)
     {
         Strength = strength;
@@ -98,18 +137,18 @@ public class Steel : BaseCraftedResources
         switch (resource.Type)
         {
             case ResourceTypes.Molybdenum:
-                return Type == CraftedResources.S_316;
+                return Type == CraftedResourcesType.S_316;
             case ResourceTypes.Titanium:
-                return Type == CraftedResources.S_316Ti;
+                return Type == CraftedResourcesType.S_316Ti;
             case ResourceTypes.Nickel:
-                return Type == CraftedResources.S_430;
+                return Type == CraftedResourcesType.S_430;
             case ResourceTypes.Carbon:
-                return Type == CraftedResources.S_440C;
+                return Type == CraftedResourcesType.S_440C;
         }
         return false;
     }
 
-    protected override bool IsValidType(CraftedResources type)
+    protected override bool IsValidType(CraftedResourcesType type)
     {
         return type.ToString().Split('_')[0] == "S";
     }
@@ -138,18 +177,18 @@ public class Steel : BaseCraftedResources
     }
 }
 
-public class Battery : BaseCraftedResources
+public class Battery : CraftedResources
 {
     ResourceBase additionalResource;
 
-    public Battery(CraftedResources type, Dictionary<ResourceTypes, int> requires, List<Components> buildsInto, Gauges power, bool isRechargable)
+    public Battery(CraftedResourcesType type, Dictionary<ResourceTypes, int> requires, List<Components> buildsInto, Gauges power, bool isRechargable)
         : base(type, requires, buildsInto)
     {
         Power = power;
         IsRechargable = isRechargable;
     }
 
-    public Battery(CraftedResources type, Dictionary<ResourceTypes, int> requires, List<Components> buildsInto, ResourceBase additionalResource, Gauges power, bool isRechargable)
+    public Battery(CraftedResourcesType type, Dictionary<ResourceTypes, int> requires, List<Components> buildsInto, ResourceBase additionalResource, Gauges power, bool isRechargable)
         : base(type, requires, buildsInto, additionalResource)
     {
         Power = power;
@@ -161,14 +200,14 @@ public class Battery : BaseCraftedResources
         switch (resource.Type)
         {
             case ResourceTypes.Lithium:
-                return Type == CraftedResources.B_Lithium;
+                return Type == CraftedResourcesType.B_Lithium;
             case ResourceTypes.Plasma:
-                return Type == CraftedResources.B_Plasma;
+                return Type == CraftedResourcesType.B_Plasma;
         }
         return false;
     }
 
-    protected override bool IsValidType(CraftedResources type)
+    protected override bool IsValidType(CraftedResourcesType type)
     {
         return type.ToString().Split('_')[0] == "B";
     }
@@ -192,7 +231,7 @@ public class Battery : BaseCraftedResources
 }
 
 
-public enum CraftedResources
+public enum CraftedResourcesType
 {
     S_316,
     S_304,

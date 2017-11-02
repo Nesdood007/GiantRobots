@@ -15,10 +15,13 @@ public class CameraMovement : MonoBehaviour
 
     private float radius = 0.0f;
     private float deg = 0.0f;
+
+    GameObject player;
     // Use this for initialization
     void Start()
     {
-        transform.position = GameObject.FindGameObjectWithTag("Player").transform.position + cameraOffset;
+        player = transform.parent.gameObject;
+        transform.position = player.transform.position + cameraOffset;
         //transform.position = player.transform.position + cameraOffset;
         updatePositioning();
 
@@ -38,6 +41,9 @@ public class CameraMovement : MonoBehaviour
             //transform.Translate(new Vector3(Mathf.Cos(rotationSpeed * Time.deltaTime * mouseY * mouseYInvert), Mathf.Sin(rotationSpeed * Time.deltaTime * mouseY * mouseYInvert), 0));
             //transform.position = new Vector3(0, radius * Mathf.Sin(transform.rotation.eulerAngles.x), 0) + player.transform.position + cameraOffset;
         }
+
+        if(Manager.DEBUG)
+            transform.position = player.transform.position + cameraOffset;
     }
 
     //Call this if camera is repositioned

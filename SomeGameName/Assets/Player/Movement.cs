@@ -19,9 +19,10 @@ public class Movement : NetworkBehaviour
     Vector3 forward;
     Vector3 right;
     Vector3 gravityVec;
-//<<<<<<< HEAD
-//    Vector3 up;
-    public Vector3 startPosition = new Vector3(10, 3, 10);
+    Teams team;
+    //<<<<<<< HEAD
+    //    Vector3 up;
+    public Vector3 startPosition;
 
 //=======
 
@@ -38,9 +39,9 @@ public class Movement : NetworkBehaviour
     {
         characterController = GetComponent<CharacterController>();
         gravityVec = new Vector3(0, -gravity, 0);
+        team = Manager.AssignPlayerToTeam(this.gameObject, out startPosition);
         transform.position = startPosition;
-        collider = GetComponent<BoxCollider>();
-
+        collider = GetComponent<BoxCollider>();        
     }
 
     // Update is called once per frame

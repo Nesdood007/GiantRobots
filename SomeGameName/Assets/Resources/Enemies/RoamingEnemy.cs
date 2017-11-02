@@ -146,4 +146,14 @@ public abstract class RoamingEnemy : EnemyBase
         return false;
     }
 
+    public void OnTriggerEnter(Collider collider, Transform transform)
+    {
+        if(collider.tag == "Base" || collider.gameObject.tag == "Wall")
+        {
+            IsAttacking = false;
+            Health = StartHealth;
+            SetRandomDirection(transform);
+        }
+    }
+
 }

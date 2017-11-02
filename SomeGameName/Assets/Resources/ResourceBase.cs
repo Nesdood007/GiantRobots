@@ -5,13 +5,13 @@ using System;
 
 
 
-public class ResourceBase : MonoBehaviour{
+public class ResourceBase : MonoBehaviour {
 
     public readonly int PrimaryRegionAbundance = 75;
     public readonly int OffRegionAbundance = 45;
     public ResourceTypes type;
     public Rarity rarity;
-    List<CraftedResources> buildsInto;
+    List<CraftedResourcesType> buildsInto;
     public Regions primaryRegion;
     public Regions currentRegion;
     public int baseSpawnRate = 30;
@@ -19,10 +19,8 @@ public class ResourceBase : MonoBehaviour{
 
     void Start()
     {
-        Type = type;
-        BuildsInto = new List<CraftedResources>();
+        Type = type;        
         Rarity = rarity;
-        BuildsInto = buildsInto;
         PrimaryRegion = primaryRegion;
         CurrentRegion = currentRegion;
     }
@@ -90,10 +88,51 @@ public class ResourceBase : MonoBehaviour{
         private set;
     }
 
-    protected List<CraftedResources> BuildsInto
+    public static List<CraftedResourcesType> GetBuildsInto(ResourceTypes type)
     {
-        get;
-        private set;
+
+            var buildsInto = new List<CraftedResourcesType>();
+
+            switch(type)
+            {
+                case ResourceTypes.Iron:
+                case ResourceTypes.Chromite:
+                case ResourceTypes.Magnesium:
+                    buildsInto.Add(CraftedResourcesType.S_304);
+                    buildsInto.Add(CraftedResourcesType.S_316);
+                    buildsInto.Add(CraftedResourcesType.S_316Ti);
+                    buildsInto.Add(CraftedResourcesType.S_430);
+                    buildsInto.Add(CraftedResourcesType.S_440C);
+                    break;
+                case ResourceTypes.Coal:
+                case ResourceTypes.Cobalt:
+                    buildsInto.Add(CraftedResourcesType.B_CarbonZinc);
+                    buildsInto.Add(CraftedResourcesType.B_Lithium);
+                    buildsInto.Add(CraftedResourcesType.B_Plasma);
+                    break;
+                case ResourceTypes.Molybdenum:
+                    buildsInto.Add(CraftedResourcesType.S_316);
+                    break;
+                case ResourceTypes.Titanium:
+                    buildsInto.Add(CraftedResourcesType.S_316Ti);
+                    break;
+                case ResourceTypes.Nickel:
+                    buildsInto.Add(CraftedResourcesType.S_430);
+                    break;
+                case ResourceTypes.Carbon:
+                    buildsInto.Add(CraftedResourcesType.S_440C);
+                    break;
+                case ResourceTypes.Lithium:
+                    buildsInto.Add(CraftedResourcesType.B_Lithium);
+                    break;
+                case ResourceTypes.Plasma:
+                    buildsInto.Add(CraftedResourcesType.B_Plasma);
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+            return buildsInto;
+        
     }
 
     public ResourceTypes Type
@@ -168,11 +207,6 @@ public class ResourceBase : MonoBehaviour{
     public int GetAbundance(Regions region)
     {
         return (int) (Abundance[region] * ((int)Rarity/100f));
-    }
-
-    public bool CanBuildInto(CraftedResources item)
-    {
-        return BuildsInto.Contains(item);
     }
 }
 

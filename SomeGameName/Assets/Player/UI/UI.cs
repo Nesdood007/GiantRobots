@@ -9,7 +9,6 @@ public class UI : MonoBehaviour {
     Texture2D empty;
     Texture2D background;
 
-    public bool DEBUG;
     public float yOutterOffsetPercentage = .05f;
     public float xOutterOffsetPercentage = .05f;
     public float width = .1f;
@@ -65,12 +64,13 @@ public class UI : MonoBehaviour {
 	void Update () {
 		if(combat == null)
         {
-            var players = GameObject.FindGameObjectsWithTag("Player");
-            if (players.Length == 0)
+            var players = Manager.Players;
+            if (players.Count == 0 || players.Count((p) => p== null) == players.Count)
                 return;
             foreach(var p in players)
             {
-                if (p.GetComponent<Movement>().IsLocalPlayer)
+                var mvt = p.GetComponent<Movement>();
+                if (mvt.IsLocalPlayer)
                 {
                     combat = p.GetComponent<Combat>();
                     break;
@@ -81,8 +81,8 @@ public class UI : MonoBehaviour {
             return;
         fullRect.size = new Vector2(PercentHealth * originalSize.x, originalSize.y);
         
-        if(DEBUG)        
-            SetRectangles();
+        //if(Manager.DEBUG)        
+        //    SetRectangles();
         
     }
 
