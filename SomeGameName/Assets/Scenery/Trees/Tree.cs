@@ -16,7 +16,20 @@ public class Tree : MonoBehaviour {
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.tag == "Base" && !transform.Find("GameManager").GetComponent<Manager>().GameIsGoing)
+        if (collision.gameObject.tag == "Base" && Manager.CurrentState == States.Setup)
             Destroy(gameObject);
     }
+
+    private void OnTriggerEnter(Collider collider)
+    {
+        if (collider.gameObject.tag == "Base" && Manager.CurrentState == States.Setup)
+            Destroy(gameObject);
+    }
+
+    private void OnTriggerStay(Collider collider)
+    {
+        if (collider.gameObject.tag == "Base")
+            Destroy(gameObject);
+    }
+
 }

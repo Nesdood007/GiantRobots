@@ -4,53 +4,29 @@ using UnityEngine;
 
 public class Combat : MonoBehaviour {
 
-    public float startingHealth = 100f;
+   
     public float damage = 5f;
     public bool IsAlive = true;
-    float health;
-
-    public float Health
-    {
-        get { return health; }
-        private set { health = value; }
-    }
-
-    public float PercentHealth
-    {
-        get { return health/startingHealth; }
-    }
+    
+    Stats stats;
+   
     
 	// Use this for initialization
 	void Start () {
-        Health = startingHealth;
-	}
+        stats = GetComponent<Stats>();
+
+    }
 
     // Update is called once per frame
     void Update() {
+        if (stats == null)
+            return;
+        if (stats.CurrentHealth <= 0)
+            IsAlive = false;
         if (!IsAlive)
             OnDeath();
 
-    }
-
-    public void TakePercentDamage(float percent)
-    {
-        if (percent <= 0 || percent > 1)
-            return;
-        TakeDamage(Health * percent);
-    }
-
-    public void TakeDamage(float damage)
-    {
-        if (damage > 0)
-            Health -= damage;
-        if (health < 0)
-        {
-            IsAlive = false;
-            OnDeath();            
-        }
-
-        Debug.Log(Health);
-    }
+    }     
 
     public void OnDeath()
     {

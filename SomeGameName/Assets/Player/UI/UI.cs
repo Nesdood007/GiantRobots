@@ -10,26 +10,26 @@ public class UI : MonoBehaviour {
     Texture2D background;
 
     public float yOutterOffsetPercentage = .05f;
-    public float xOutterOffsetPercentage = .05f;
-    public float width = .1f;
+    public float xOutterOffsetPercentage = .01f;
+    public float width = .25f;
     public float height = .05f;
-    public float yInnerOffsetPercentage = .02f;
-    public float xInnerOffsetPercentage = .02f;
+    public float yInnerOffsetPercentage = .01f;
+    public float xInnerOffsetPercentage = .002f;
 
     Rect backgroundRect;
     Rect fullRect;
     Rect emptyRect;
-    Combat combat;
+    Stats stats;
     Vector2 originalSize;
 
     float Health
     {
-        get { return combat.Health; }
+        get { return stats.CurrentHealth; }
     }
 
     float PercentHealth
     {
-        get { return combat.PercentHealth; }
+        get { return stats.CurrentHealth/(float)stats.StartingHealth; }
     }
 
     void SetRectangles()
@@ -62,7 +62,7 @@ public class UI : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		if(combat == null)
+		if(stats == null)
         {
             var players = Manager.Players;
             if (players.Count == 0 || players.Count((p) => p== null) == players.Count)
@@ -72,23 +72,21 @@ public class UI : MonoBehaviour {
                 var mvt = p.GetComponent<Movement>();
                 if (mvt.IsLocalPlayer)
                 {
-                    combat = p.GetComponent<Combat>();
+                    stats = p.GetComponent<Stats>();
                     break;
                 }
             }
         }
-        if (combat == null)
+        if (stats == null)
             return;
         fullRect.size = new Vector2(PercentHealth * originalSize.x, originalSize.y);
-        
-        //if(Manager.DEBUG)        
-        //    SetRectangles();
-        
+
+       
     }
 
     void OnGUI()
     {
-        if (combat == null)
+        if (stats == null)
             return;
         GUI.DrawTexture(backgroundRect, background);
         GUI.DrawTexture(emptyRect, empty);

@@ -23,13 +23,14 @@ public class Inventory : MonoBehaviour {
     public float buttonRadius = 2f;
     Vector2 textureSize;
     Vector2 textureOffset;
+    public TeamInventory teamInventory;
     
     List<Texture2D> selectedItems;
 
     public GUIStyle normalButtonSkin;
     public GUIStyle activeButtonSkin;
 
-
+    Texture2D draggingTexture = null;
 
     void Awake()
     {
@@ -50,7 +51,24 @@ public class Inventory : MonoBehaviour {
         if (Input.GetKeyDown(KeyCode.B))
             showInventory = !showInventory;
 
-        if(showInventory && Input.GetMouseButtonDown(1))
+        if(showInventory && Input.GetMouseButtonUp(0) && draggingTexture != null)
+        {           
+            if(teamInventory.playerInBounds && teamInventory.showInventory)
+            {
+                var center = Camera.main.WorldToScreenPoint(teamInventory.gameObject.transform.position);
+                Rect screenRect = BoundsToScreenRect(teamInventory.bounds);
+                var mouse = Input.mousePosition;
+                mouse.y = Screen.height - mouse.y;
+                if (teamInventory.inventoryRect.Contains(mouse))
+                {
+                    var key = FormatKey(draggingTexture.name, ObjectType.Resource);
+                    teamInventory.AddItem(key);
+                    items.Remove(key);
+                }
+            }
+            draggingTexture = null;
+        }
+        else if(showInventory && Input.GetMouseButtonDown(1) && !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)))
         {
             string craftedItem;
             if (TryCombine(selectedItems.ToArray(), out craftedItem))
@@ -61,6 +79,7 @@ public class Inventory : MonoBehaviour {
             }
             selectedItems.Clear();
         }
+        
 
         items = items.Count > 1 ? items.OrderBy(kvp => kvp.Key).ToDictionary(kvp => kvp.Key, kvp => kvp.Value) : items;
 
@@ -92,7 +111,7 @@ public class Inventory : MonoBehaviour {
         {
             Vector2 currentPosition = new Vector2(inventoryRect.x + xDisplacement, inventoryRect.y + yDisplacement) + textureOffset;
 
-            if (currentPosition.x > inventoryRect.max.y)
+            if (currentPosition.y > inventoryRect.max.y)
                 break;
 
             if (Manager.ResourceTextures.Count == 0)
@@ -107,27 +126,39 @@ public class Inventory : MonoBehaviour {
             }
             GUI.Box(new Rect(currentPosition, textureSize), string.Empty, selectedItems.Any(item => item.name == texture.name) ? activeButtonSkin : normalButtonSkin);//, new Rect(new Vector2(inventoryRect.x + xDisplacement, inventoryRect.y + yDisplacement)));            
 
-            var currButton = new Rect(new Vector2(currentPosition.x - buttonRadius, currentPosition.y - buttonRadius), new Vector2(textureSize.x + buttonRadius * 2, textureSize.y + buttonRadius * 2));
-
+            var currButton = new Rect(new Vector2(currentPosition.x - buttonRadius, currentPosition.y - buttonRadius), new Vector2(textureSize.x + buttonRadius * 2, textureSize.y + buttonRadius * 2));            
             
+
+            if(Input.GetMouseButtonDown(0) && currButton.Contains(Input.mousePosition))
+            {
+                if (draggingTexture == null)
+                {
+                    draggingTexture = texture;
+                }
+
+            }
 
             if (GUI.Button(currButton, texture))
             {
-                if(selectedItems.Any(item => item.name == texture.name))
+                var e = Event.current;
+                if (e.button == 1 && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)))
                 {
-                    foreach (var item in selectedItems)
+                    if (selectedItems.Any(item => item.name == texture.name))
                     {
-                        if (item.name == texture.name)
-                        {                            
-                            selectedItems.Remove(item);
-                            break;
+                        foreach (var item in selectedItems)
+                        {
+                            if (item.name == texture.name)
+                            {
+                                selectedItems.Remove(item);
+                                break;
+                            }
                         }
                     }
+                    else
+                    {
+                        selectedItems.Add(texture);
+                    }
                 }
-                else
-                {
-                    selectedItems.Add(texture);
-                }                
             }
 
             if (currButton.Contains(Event.current.mousePosition))
@@ -156,6 +187,17 @@ public class Inventory : MonoBehaviour {
 
 
         }
+
+        if(draggingTexture != null)
+        {
+            var pos = Event.current.mousePosition;
+            var size = new Vector2(textureSize.x + buttonRadius * 2, textureSize.y + buttonRadius * 2);
+            pos.x -= size.x * .5f;
+            pos.y -= size.y * .5f;
+            var r = new Rect(pos, size);
+            GUI.DrawTexture(r, draggingTexture);
+        }
+
         //GUI.EndScrollView();
         if (setHover)
         {
@@ -320,7 +362,7 @@ public class Inventory : MonoBehaviour {
         Debug.Log(InventoryToString());
     }
 
-    string FormatKey(string key, ObjectType type)
+    public static string FormatKey(string key, ObjectType type)
     {
         switch (type)
         {
@@ -352,6 +394,21 @@ public class Inventory : MonoBehaviour {
         if (s == string.Empty)
             return "";
         return s.Substring(0, s.Length - 2);
+    }
+
+    public Rect BoundsToScreenRect(Bounds bounds)
+    {
+        // Get mesh origin and farthest extent (this works best with simple convex meshes)
+        Vector3 origin = Camera.main.WorldToScreenPoint(new Vector3(bounds.min.x, bounds.min.y, 0f));
+        Vector3 extent = Camera.main.WorldToScreenPoint(new Vector3(bounds.max.x, bounds.max.y, 0f)) - origin;
+        extent = new Vector3(extent.x * .5f, extent.y * .5f, extent.z * .5f);
+
+        // Create rect in screen space and return - does not account for camera perspective
+        var s_x = extent.x - origin.x;
+        s_x  = s_x < 0? -s_x : s_x;
+        var s_y = origin.y - extent.y;
+        s_y = s_y < 0 ? -s_y : s_y;
+        return new Rect(origin.x, Screen.height - origin.y, s_x, s_y);
     }
 
     //class InventoryItem

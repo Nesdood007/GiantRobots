@@ -21,8 +21,8 @@ GameObject:
   - component: {fileID: 4107236296159114}
   - component: {fileID: 33905611385744964}
   - component: {fileID: 23999155083115778}
-  - component: {fileID: 64301166866631002}
   - component: {fileID: 114413004886980024}
+  - component: {fileID: 65663366007122942}
   m_Layer: 0
   m_Name: Tree_Cactus_Desert_10
   m_TagString: Untagged
@@ -37,7 +37,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1028428264452240}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 144.93657, y: 0, z: 138.92628}
+  m_LocalPosition: {x: 101.94486, y: 0, z: 93.26358}
   m_LocalScale: {x: 0.05, y: 0.05, z: 0.05}
   m_Children: []
   m_Father: {fileID: 0}
@@ -82,20 +82,18 @@ MeshFilter:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1028428264452240}
   m_Mesh: {fileID: 4300000, guid: 01e709c0afcf6144c9135ffd30ca220b, type: 3}
---- !u!64 &64301166866631002
-MeshCollider:
+--- !u!65 &65663366007122942
+BoxCollider:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1028428264452240}
   m_Material: {fileID: 0}
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Convex: 0
-  m_InflateMesh: 0
-  m_SkinWidth: 0.01
-  m_Mesh: {fileID: 4300000, guid: 01e709c0afcf6144c9135ffd30ca220b, type: 3}
+  m_Size: {x: 40.293503, y: 103.36758, z: 42.672707}
+  m_Center: {x: 0.18287086, y: 50.108982, z: 1.0154715}
 --- !u!114 &114413004886980024
 MonoBehaviour:
   m_ObjectHideFlags: 1

@@ -23,7 +23,7 @@ public class Manager : MonoBehaviour {
     public static List<GameObject> Enemies;
     public static List<GameObject> Trees;
     public static List<Team> Teams;
-
+    public static States CurrentState = States.Setup;
     static System.Random rand;
     Vector3 currentPosition;
     TerrainData tData;
@@ -33,12 +33,6 @@ public class Manager : MonoBehaviour {
     {
         var c = gameobject.transform.GetChild(0).GetComponentsInParent(typeof(T), true);
         return c.Count() == 0 ? null : c[0] as T;
-    }
-
-    public bool GameIsGoing
-    {
-        get;
-        private set;
     }
 
     public Dictionary<Regions, Rect> RegionPositions
@@ -97,10 +91,10 @@ public class Manager : MonoBehaviour {
 
     private void Awake()
     {
-        SetProperties();
 
+        Players = GameObject.FindGameObjectsWithTag("Player").ToList();
 
-        if(GameIsGoing)
+        if (CurrentState != States.GameIsGoing)
         {
             foreach(var p in Players)
             {
@@ -108,6 +102,10 @@ public class Manager : MonoBehaviour {
             }
             
         }
+
+        Players = GameObject.FindGameObjectsWithTag("Player").ToList();
+
+        SetProperties();
 
         (new CreateWalls()).BuildWalls(Resources.LoadAll<GameObject>("Buildings/Wall").First(w => w.GetType().Name.Contains("GameObject")));
 
@@ -175,7 +173,10 @@ public class Manager : MonoBehaviour {
     {
         Players = GameObject.FindGameObjectsWithTag("Player").ToList();
         Enemies = GameObject.FindGameObjectsWithTag("Enemy").ToList();
-        GameIsGoing = Players.Count > 0;        
+        if (Players.Count > 0 && CurrentState == States.Setup)
+            CurrentState = States.GameIsGoing;
+        else if (CurrentState == States.GameIsGoing && Players.Count == 0)
+            CurrentState = States.GameIsOver;       
     }
 
     void SetSkybox()
@@ -210,6 +211,7 @@ public class Manager : MonoBehaviour {
         foreach (var region in RegionPositions.Keys)
         {
             for(int i = 0; i < NumberOfCommonEnemiesAtOneTime; i++)
+            //for (int i = 0; i < 1; i++)
             {
                 var enemy = GetCommonEnemy(region);
                 if(enemy != null)
@@ -235,7 +237,7 @@ public class Manager : MonoBehaviour {
         }
     }
 
-    public static Teams AssignPlayerToTeam(GameObject player, out Vector3 startingPosition)
+    public static Teams AssignPlayerToTeam(GameObject player, out Vector3 startingPosition, out GameObject assignedBase)
     {
         Teams teamName;
         Team team;
@@ -252,7 +254,7 @@ public class Manager : MonoBehaviour {
 
         teamName = team.Name;
 
-        var spawnPoint = team.GetUnusedSpawnPoint();
+        var spawnPoint = team.GetUnusedSpawnPoint(out assignedBase);
         if (spawnPoint == null)
             throw new ArgumentOutOfRangeException();
 
@@ -367,8 +369,9 @@ public class Team
         return baseObj.transform.position;
     }
 
-    public Vector3? GetUnusedSpawnPoint()
+    public Vector3? GetUnusedSpawnPoint(out GameObject spawnBase)
     {
+        spawnBase = null;
         var spawnPointsParent = baseObj.transform.Find("SpawnPoints");
         for(int i = 0; i < baseObj.transform.Find("SpawnPoints").childCount; i++ )
         {
@@ -376,6 +379,7 @@ public class Team
             if (!usedSpawnPoints.Contains(point.gameObject.name))
             {
                 usedSpawnPoints.Add(point.name);
+                spawnBase = baseObj;
                 return point.position;
             }
         }
@@ -387,6 +391,13 @@ public class Team
     {
         return baseObj.GetComponent<BoxCollider>().bounds.Contains(point);
     }
+}
+
+public enum States
+{
+    GameIsGoing,
+    Setup,
+    GameIsOver
 }
 
 

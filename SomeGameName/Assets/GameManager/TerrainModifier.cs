@@ -91,7 +91,7 @@ public class TerrainModifier : MonoBehaviour
         var terrainMap = regions.First().GetTerrainMap(terrain.terrainData);
         regions.First().SetGrasslands(ref terrainMap);
         foreach (var region in regions)
-            region.AssignTextures(mapAlignment.Keys.First(k=>mapAlignment[k] == region.Region), maxHeight * height * RegionBase.TerrainMaxHeight, ref terrainMap);
+            region.AssignTextures(mapAlignment.Keys.First(k=>mapAlignment[k] == region.Region), ref terrainMap);
 
          terrain.terrainData.SetAlphamaps(0, 0, terrainMap);
 

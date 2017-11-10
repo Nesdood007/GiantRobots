@@ -6,8 +6,8 @@ using System.Linq;
 public abstract class RoamingEnemy : EnemyBase    
 {     
 
-    public RoamingEnemy(int health, int damage, float speed, float spawnRate, Rarity rarity, Regions primaryRegion, float playerVisionRadius, bool canWanderThroughRegions)
-        : base(health, damage, speed, spawnRate, rarity, primaryRegion)
+    public RoamingEnemy(Stats stats, int health, int damage, float speed, float spawnRate, Rarity rarity, Regions primaryRegion, float playerVisionRadius, bool canWanderThroughRegions)
+        : base(stats, health, damage, speed, spawnRate, rarity, primaryRegion)
     {
         PlayerVisionRadius = playerVisionRadius;
         CanWanderThroughRegions = CanWanderThroughRegions;
@@ -71,8 +71,19 @@ public abstract class RoamingEnemy : EnemyBase
 
     public void SetRandomDirection(Transform transform)
     {
-        Direction = new Vector3((Random.Next() % 2 == 0 ? -1 : 1) * (Random.Next() % 100), 0, (Random.Next() % 2 == 0 ? -1 : 1) * (Random.Next() % 100)).normalized;
-        transform.rotation = Quaternion.LookRotation(Direction - transform.position);
+        RaycastHit hit;
+        Ray ray;
+        int attempts = 0; 
+        do
+        {
+            attempts++;
+            Direction = new Vector3(Random.Next() % 100, 0, Random.Next() % 100);
+            Direction = new Vector3(Direction.x * (Random.Next() % 2 == 0 ? -1 : 1), 0, Direction.z * (Random.Next() % 2 == 0 ? -1 : 1));
+            ray = new Ray(transform.position, Direction);
+        }
+        while ((!Physics.Raycast(ray, out hit, 1f) || (hit.transform.gameObject.tag != "Wall" && hit.transform.gameObject.tag != "Base" && WanderingBounds.Contains(ray.GetPoint(2f)) && !TerrainModifier.Grasslands.PointIsInCircle(new Vector2(ray.GetPoint(1f).x, ray.GetPoint(1f).z)))) && attempts < 10);
+        var forward = transform.position + transform.forward;
+        transform.rotation = Quaternion.Euler(new Vector3(transform.rotation.x, ((Direction.x/Direction.z)>0? 1 : -1) * Vector3.Angle(forward, ray.direction), transform.rotation.z));
     }
 
     public void SetRandomStartingPosition(Transform transform)
@@ -138,7 +149,7 @@ public abstract class RoamingEnemy : EnemyBase
             if(Vector3.Distance(transform.position, p.transform.position) < PlayerVisionRadius)
             {
                 TargetPlayer = p;
-                TargetPlayerCollider = TargetPlayer.GetComponent<BoxCollider>();
+                TargetPlayerCollider = TargetPlayer.GetComponent<Collider>();
                 TargetPlayerCamera = TargetPlayer.GetComponentInChildren<Camera>();
                 return true;
             }

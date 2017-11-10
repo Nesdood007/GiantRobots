@@ -14,23 +14,23 @@ public abstract class EnemyBase
 
     System.Object lockGM = new System.Object();
     System.Object lockRandom = new System.Object();
-    
+    Stats stats;
 
     float healthBarWidth = 50f;
     float healthBarHeight = 10f;
     float startingHealth;
 
-    public EnemyBase(int health, int damage, float speed, float spawnRate, Rarity rarity, Regions primaryRegion)        
+    public EnemyBase(Stats stats, int health, int damage, float speed, float spawnRate, Rarity rarity, Regions primaryRegion)        
     {
         Health = health;
-        startingHealth = Health;
-        Damage = damage;
+        startingHealth = Health;        
         Speed = speed;        
         IsAlive = true;
         Rarity = rarity;
         SpawnRate = spawnRate;
         PrimaryRegion = primaryRegion;
         StartHealth = Health;
+        this.stats = stats;
         lock (lockGM)
             GameManager = GameManager ?? GameObject.FindGameObjectWithTag("GameManager").GetComponent<Manager>();
         lock(lockRandom)
@@ -63,8 +63,12 @@ public abstract class EnemyBase
 
     public int Damage
     {
-        get;
-        private set;
+        get { return stats.GetDamage(); }
+    }
+
+    public Dictionary<Effects, int> EffectDamage
+    {
+        get { return stats.GetEffectDamage(); }
     }
 
     public float Speed
@@ -73,16 +77,9 @@ public abstract class EnemyBase
         set;
     }
 
-    public Effects DamageEffect
-    {
-        get;
-        protected set;
-    }
-
     public List<Effects> Resistances
     {
-        get;
-        protected set;
+        get { return stats.ResistancePercentages.Keys.ToList(); }
     }
 
     public float SpawnRate

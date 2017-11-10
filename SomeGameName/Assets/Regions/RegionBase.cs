@@ -244,7 +244,7 @@ public abstract class RegionBase
         }
     }
 
-    public virtual void AssignTextures(Corners corner, float terrainMaxHeight, ref float[,,] map) { }
+    public virtual void AssignTextures(Corners corner, ref float[,,] map) { }
 
     public virtual float[,] CreateMountains()
     {
@@ -438,63 +438,69 @@ public class Mountains : RegionBase
         return map;
     }
 
-    public override void AssignTextures(Corners corner, float terrainMaxHeight, ref float[,,] map)
+    public override void AssignTextures(Corners corner, ref float[,,] map)
     {
-        try
+
+        var length = map.GetLength(0);
+        var terrain = Terrain.activeTerrain;
+
+        var jStart = (int)(corner == Corners.TopRight || corner == Corners.TopLeft ? 0 : length * .5f);
+        var jEnd = (int)(corner == Corners.TopLeft || corner == Corners.TopLeft ? length * .5 : length);
+        var iStart = (int)(corner == Corners.TopRight || corner == Corners.BottomRight ? 0 : length * .5f);
+        var iEnd = (int)(corner == Corners.TopRight || corner == Corners.BottomRight ? length * .5 : length);
+        var divisor = terrain.terrainData.size.x/length;
+
+        var maxTerrainHeight = -1f;
+        for (int j = jStart; j < jEnd; j++)
         {
-            var length = map.GetLength(0);
-            var terrain = Terrain.activeTerrain;
-
-            var jStart = (int)(corner == Corners.TopRight || corner == Corners.TopLeft ? 0 : length * .5f);
-            var jEnd = (int)(corner == Corners.TopLeft || corner == Corners.TopLeft ? length * .5 : length);
-            var iStart = (int)(corner == Corners.TopRight || corner == Corners.BottomRight ? 0 : length * .5f);
-            var iEnd = (int)(corner == Corners.TopRight || corner == Corners.BottomRight ? length * .5 : length);
-            var divisor = terrain.terrainData.size.x/length;
-
-            for (int j = jStart; j < jEnd; j++)
+            for (int i = iStart; i < iEnd; i++)
             {
-                for (int i = iStart; i < iEnd; i++)
+                var sample = terrain.SampleHeight(new Vector3(i * divisor, 0, j * divisor));
+                if (sample > maxTerrainHeight)
+                    maxTerrainHeight = sample;
+            }
+        }
+
+        for (int j = jStart; j < jEnd; j++)
+        {
+            for (int i = iStart; i < iEnd; i++)
+            {
+                map[j, i, (int)TextureIndexes.Sand] = 0;
+                if (TextureIsInGrasslands(i, j))
                 {
-                    map[j, i, (int)TextureIndexes.Sand] = 0;
-                    if (TextureIsInGrasslands(i, j))
+                    map[j, i, (int)TextureIndexes.MountainGrey] = 0;
+                    map[j, i, (int)TextureIndexes.MountainSnow] = 0;
+                    map[j, i, (int)TextureIndexes.MountainGrass] = 0;
+                    map[j, i, (int)TextureIndexes.Grasslands] = 1f;
+                }
+                else
+                {
+                    map[j, i, (int)TextureIndexes.Grasslands] = 0f;
+                    var h = terrain.SampleHeight(new Vector3(i * divisor, 0, j * divisor));
+                    var percent = h / maxTerrainHeight;
+                    if (percent > .5)
                     {
-                        map[j, i, (int)TextureIndexes.MountainGrey] = 0;
-                        map[j, i, (int)TextureIndexes.MountainSnow] = 0;
+                        percent = (percent - .5f) * 2;
                         map[j, i, (int)TextureIndexes.MountainGrass] = 0;
-                        map[j, i, (int)TextureIndexes.Grasslands] = 1f;
+                        map[j, i, (int)TextureIndexes.MountainGrey] = 1 - percent;
+                        map[j, i, (int)TextureIndexes.MountainSnow] = percent;
+                    }
+                    else if (percent < .5)
+                    {
+                        percent = percent * 2;
+                        map[j, i, (int)TextureIndexes.MountainGrass] = 1 - percent;
+                        map[j, i, (int)TextureIndexes.MountainGrey] = percent;
+                        map[j, i, (int)TextureIndexes.MountainSnow] = 0;
                     }
                     else
                     {
-                        map[j, i, (int)TextureIndexes.Grasslands] = 0f;
-                        var h = terrain.SampleHeight(new Vector3(i * divisor, 0, j * divisor));
-                        var percent = h / terrainMaxHeight;
-                        if (percent > .5)
-                        {
-                            percent = (percent - .5f) * 2;
-                            map[j, i, (int)TextureIndexes.MountainGrass] = 0;
-                            map[j, i, (int)TextureIndexes.MountainGrey] = 1 - percent;
-                            map[j, i, (int)TextureIndexes.MountainSnow] = percent;
-                        }
-                        else if (percent < .5)
-                        {
-                            percent = percent * 2;
-                            map[j, i, (int)TextureIndexes.MountainGrass] = 1 - percent;
-                            map[j, i, (int)TextureIndexes.MountainGrey] = percent;
-                            map[j, i, (int)TextureIndexes.MountainSnow] = 0;
-                        }
-                        else
-                        {
-                            map[j, i, (int)TextureIndexes.MountainGrass] = 0;
-                            map[j, i, (int)TextureIndexes.MountainGrey] = 1;
-                            map[j, i, (int)TextureIndexes.MountainSnow] = 0;
-                        }
-
+                        map[j, i, (int)TextureIndexes.MountainGrass] = 0;
+                        map[j, i, (int)TextureIndexes.MountainGrey] = 1;
+                        map[j, i, (int)TextureIndexes.MountainSnow] = 0;
                     }
+
                 }
             }
-        } catch(System.Exception e)
-        {
-            Debug.Log(e.Message);
         }
     }
 

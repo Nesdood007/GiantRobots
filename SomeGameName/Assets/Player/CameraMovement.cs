@@ -9,7 +9,7 @@ public class CameraMovement : MonoBehaviour
     public bool useMouse = true;
     public bool invertMouseY = true;
     public float rotationSpeed = 50.0f;
-
+    TeamInventory teamInventory;
     //For Inverting Mouse Movement
     private float mouseYInvert = -1.0f;
 
@@ -21,6 +21,7 @@ public class CameraMovement : MonoBehaviour
     void Start()
     {
         player = transform.parent.gameObject;
+        
         transform.position = player.transform.position + cameraOffset;
         //transform.position = player.transform.position + cameraOffset;
         updatePositioning();
@@ -30,20 +31,21 @@ public class CameraMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+       
         var mouseY = Input.GetAxis("Mouse Y");
         float rot = rotationSpeed * Time.deltaTime * mouseY * mouseYInvert;
         if (useMouse && mouseY != 0)
         {
-            if (invertMouseY) mouseYInvert = -1.0f;
-            else mouseYInvert = 1.0f;
-            transform.Rotate(new Vector3(rot, 0, 0));
+            //if (invertMouseY) mouseYInvert = -1.0f;
+            //else mouseYInvert = 1.0f;
+            //transform.Rotate(new Vector3(rot, 0, 0));
             //Move Camera up and down.
             //transform.Translate(new Vector3(Mathf.Cos(rotationSpeed * Time.deltaTime * mouseY * mouseYInvert), Mathf.Sin(rotationSpeed * Time.deltaTime * mouseY * mouseYInvert), 0));
             //transform.position = new Vector3(0, radius * Mathf.Sin(transform.rotation.eulerAngles.x), 0) + player.transform.position + cameraOffset;
         }
 
-        if(Manager.DEBUG)
-            transform.position = player.transform.position + cameraOffset;
+        //if(Manager.DEBUG)
+        //    transform.position = player.transform.position + cameraOffset;
     }
 
     //Call this if camera is repositioned

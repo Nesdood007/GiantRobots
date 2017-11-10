@@ -48,6 +48,7 @@ GameObject:
   - component: {fileID: 114697464928563718}
   - component: {fileID: 114747681018287472}
   - component: {fileID: 114837217142913474}
+  - component: {fileID: 114935923349779526}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -115,6 +116,7 @@ GameObject:
   - component: {fileID: 114587489235775780}
   - component: {fileID: 65914461612189686}
   - component: {fileID: 54355772398640780}
+  - component: {fileID: 114374052445429638}
   m_Layer: 0
   m_Name: Sword
   m_TagString: Weapon
@@ -372,6 +374,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HorizontalFit: 0
   m_VerticalFit: 1
+--- !u!114 &114374052445429638
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1840938612975134}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f58f285dc1da2c44912553918293c07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  BaseDamage: 0
+  Resistances: 
+  DamageEffects: 
+  StrengthModifier: 10
+  HealthModifier: 0
 --- !u!114 &114510315545869112
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -480,7 +498,7 @@ MonoBehaviour:
   m_Script: {fileID: -1768714887, guid: dc443db3e92b4983b9738c1131f555cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_TransformSyncMode: 1
+  m_TransformSyncMode: 4
   m_SendInterval: 0.1
   m_SyncRotationAxis: 7
   m_RotationSyncCompression: 0
@@ -510,6 +528,7 @@ MonoBehaviour:
   texturePercentage: 0.25
   yMargin: 0.01
   buttonRadius: 2
+  teamInventory: {fileID: 0}
   normalButtonSkin:
     m_Name: 
     m_Normal:
@@ -655,9 +674,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0080778a185825a49961a4382583ca82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startingHealth: 100
   damage: 5
   IsAlive: 1
+--- !u!114 &114935923349779526
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1094499963437164}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66cce76fc6dbda44a84b225c8b5181f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  CurrentHealth: 100
+  StartingHealth: 100
+  Armor: 0
+  Strength: 10
 --- !u!124 &124911812248100266
 Behaviour:
   m_ObjectHideFlags: 1
@@ -678,7 +711,7 @@ CharacterController:
   m_Height: 1
   m_Radius: 0.5
   m_SlopeLimit: 60
-  m_StepOffset: 0.3
+  m_StepOffset: 0.5
   m_SkinWidth: 0.0001
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}

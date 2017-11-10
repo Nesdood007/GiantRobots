@@ -23,6 +23,7 @@ public class Movement : NetworkBehaviour
     //<<<<<<< HEAD
     //    Vector3 up;
     public Vector3 startPosition;
+    TeamInventory teamInventory;
 
 //=======
 
@@ -39,9 +40,12 @@ public class Movement : NetworkBehaviour
     {
         characterController = GetComponent<CharacterController>();
         gravityVec = new Vector3(0, -gravity, 0);
-        team = Manager.AssignPlayerToTeam(this.gameObject, out startPosition);
+        GameObject assignedBase;
+        team = Manager.AssignPlayerToTeam(this.gameObject, out startPosition, out assignedBase);
+        GetComponent<Inventory>().teamInventory = assignedBase.transform.Find("chest").Find("ChestRadius").GetComponent<TeamInventory>();
         transform.position = startPosition;
-        collider = GetComponent<BoxCollider>();        
+        collider = GetComponent<BoxCollider>();
+        teamInventory = gameObject.GetComponent<Inventory>().teamInventory;
     }
 
     // Update is called once per frame
@@ -50,7 +54,7 @@ public class Movement : NetworkBehaviour
         //var direction = transform.TransformDirection(Vector3.forward + Vector3.right);
         //characterController.Move(new Vector3(direction.x * horizontalSpeed * Time.deltaTime * Input.GetAxis("Horizontal"), , direction.z * forwardSpeed * Time.deltaTime * Input.GetAxis("Vertical")));
 
-        if (!isLocalPlayer)
+        if (!isLocalPlayer || teamInventory.showInventory)
             return;
 
         var forw = Input.GetAxis("Vertical");

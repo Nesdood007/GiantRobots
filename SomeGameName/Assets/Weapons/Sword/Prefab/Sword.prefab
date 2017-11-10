@@ -21,6 +21,7 @@ GameObject:
   - component: {fileID: 4000012688968892}
   - component: {fileID: 33000014073029718}
   - component: {fileID: 23000010454580106}
+  - component: {fileID: 114358336376456230}
   m_Layer: 0
   m_Name: Sword
   m_TagString: Untagged
@@ -80,3 +81,19 @@ MeshFilter:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1000013991638460}
   m_Mesh: {fileID: 4300000, guid: 0b9762eb0b9a2d44399e2e0d7513b31f, type: 3}
+--- !u!114 &114358336376456230
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1000013991638460}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f58f285dc1da2c44912553918293c07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  BaseDamage: 1
+  Resistances: 
+  DamageEffects: 
+  StrengthModifier: 0
+  HealthModifier: 0

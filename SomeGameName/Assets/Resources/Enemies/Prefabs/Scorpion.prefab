@@ -38,6 +38,7 @@ GameObject:
   - component: {fileID: 143665206386165374}
   - component: {fileID: 114282876391284008}
   - component: {fileID: 114102286248356418}
+  - component: {fileID: 114145364720530428}
   m_Layer: 0
   m_Name: Scorpion
   m_TagString: Enemy
@@ -299,6 +300,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rarity: 100
   primaryRegion: 3
+--- !u!114 &114145364720530428
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1505930326929936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66cce76fc6dbda44a84b225c8b5181f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  CurrentHealth: 100
+  StartingHealth: 100
+  Armor: 0
+  Strength: 10
 --- !u!114 &114282876391284008
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -310,7 +326,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fda0f79edc8cd9469acdc1e6105990d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AreDebugging: 1
   canWanderThroughRegions: 0
   damage: 5
   health: 20

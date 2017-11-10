@@ -42,8 +42,9 @@ public class Scorpion : MonoBehaviour
         healthBar = GetComponentInChildren<HealthBar>();
         healthBar.totalHealth = health;
         healthBar.enabled = false;
+
         var properties = GetComponent<EnemySetupProps>();
-        scorpionObject = new ScorpionObject(health, damage, speed, canWanderThroughRegions, spawnRate, playerRadiusVision, playerAttackRadius, properties.rarity, properties.primaryRegion);
+        scorpionObject = new ScorpionObject(GetComponentInParent<Stats>(), health, damage, speed, canWanderThroughRegions, spawnRate, playerRadiusVision, playerAttackRadius, properties.rarity, properties.primaryRegion);
     }
 
     void Update()
@@ -57,13 +58,14 @@ public class Scorpion : MonoBehaviour
             return;
         }
 
+       
 
        if(!oldCanBegin && scorpionObject.CanBegin)
         {
             scorpionObject.SetRandomDirection(transform);
             scorpionObject.SetRandomStartingPosition(transform);
         }
-        if (scorpionObject.CanBegin && scorpionObject.IsAlive && ScorpionObject.GameManager.GameIsGoing)
+        if (scorpionObject.CanBegin && scorpionObject.IsAlive && Manager.CurrentState == States.GameIsGoing)
         {
             if (!scorpionObject.IsAttacking)
                 scorpionObject.Move(characterController, transform);
@@ -76,6 +78,8 @@ public class Scorpion : MonoBehaviour
             }
         }
         oldCanBegin = scorpionObject.CanBegin;
+
+        scorpionObject.Update(transform);
 
         //DEBUG
         if(Manager.DEBUG && scorpionObject.CanBegin)
@@ -102,13 +106,14 @@ public class Scorpion : MonoBehaviour
 
     private void OnTriggerEnter(Collider collider)
     {
-        if (!scorpionObject.IsAlive || !ScorpionObject.GameManager.GameIsGoing)
+        if (!scorpionObject.IsAlive || Manager.CurrentState != States.GameIsGoing)
             return;
        
         if (collider.gameObject.tag == "Player")
         {
+            
             scorpionObject.IsRunningAtPlayer = false;
-            collider.gameObject.GetComponent<Combat>().TakeDamage(scorpionObject.Damage);
+            collider.gameObject.GetComponent<Stats>().TakeDamage(scorpionObject.Damage);
         }
         else if (collider.gameObject.tag == "Weapon")
         {
@@ -117,7 +122,7 @@ public class Scorpion : MonoBehaviour
             {
                 SwordAbilities swordAbilities = collider.gameObject.GetComponent<SwordAbilities>();
                 if (swordAbilities.State == SwordAbilities.SwordState.Resting)
-                    collider.GetComponentInParent<Combat>().TakeDamage(scorpionObject.Damage);
+                    collider.GetComponentInParent<Stats>().TakeDamage(scorpionObject.Damage);
                 else if (swordAbilities.State != SwordAbilities.SwordState.Defending && swordAbilities.State != SwordAbilities.SwordState.ReturnDefending)
                     scorpionObject.TakeDamage(swordAbilities.Damage);
             }
@@ -133,8 +138,13 @@ public class Scorpion : MonoBehaviour
         }
     }
 
-    private void OnDestroy()
+    private void OnCollisionEnter(Collision collision)
     {
+        scorpionObject.OnTriggerEnter(collision.collider, transform);
+    }
+
+    private void OnDestroy()
+    {        
         scorpionObject.DropItem(transform);
     }
 
@@ -167,8 +177,8 @@ public class Scorpion : MonoBehaviour
 public class ScorpionObject : RoamingEnemy
 {
    
-    public ScorpionObject(int health, int damage, float speed, bool canWanderThroughRegions, float spawnRate, float playerVisionRadius, float attackStartingRange, Rarity rarity, Regions primaryRegion)
-        : base(health, damage, speed, spawnRate, rarity, primaryRegion, playerVisionRadius, canWanderThroughRegions)
+    public ScorpionObject(Stats stats, int health, int damage, float speed, bool canWanderThroughRegions, float spawnRate, float playerVisionRadius, float attackStartingRange, Rarity rarity, Regions primaryRegion)
+        : base(stats, health, damage, speed, spawnRate, rarity, primaryRegion, playerVisionRadius, canWanderThroughRegions)
     {
         IsRunningAtPlayer = false;
         AttackStartingRange = attackStartingRange;
@@ -212,6 +222,18 @@ public class ScorpionObject : RoamingEnemy
             characterController.SimpleMove(newPos + Gravity);
         }
 
+    }
+
+    public void Update(Transform transform)
+    {
+        
+        RaycastHit hit;
+        if (Physics.Raycast(new Ray(transform.position, Vector3.up), out hit, 5f) && hit.transform.gameObject.tag == "Base")
+        {
+            IsAttacking = false;
+            SetRandomDirection(transform);
+
+        }
     }
 
     public void OnGUIAttack(Transform transform, Collider collider)
