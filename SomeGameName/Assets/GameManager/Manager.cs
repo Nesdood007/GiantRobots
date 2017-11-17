@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 public class Manager : MonoBehaviour {
 
     Dictionary<Corners, Regions> mapAlignment;
+    Dictionary<Corners, Regions> prevMapAlignment;
     public static bool DEBUG = true;
     public static List<GameObject> Players;
     public static List<GameObject> ResourcePrefabs;
@@ -27,6 +28,7 @@ public class Manager : MonoBehaviour {
     static System.Random rand;
     Vector3 currentPosition;
     TerrainData tData;
+
 
     public static T GetInactiveCompoent<T>(GameObject gameobject)
         where T : Component
@@ -50,42 +52,44 @@ public class Manager : MonoBehaviour {
                 throw new InvalidOperationException();
             mapAlignment = value;
 
-            //var pos = GameObject.FindGameObjectWithTag("Terrain").transform.position;
-            var terrain = GameObject.FindGameObjectWithTag("Terrain");
-            tData= terrain.GetComponent<Terrain>().terrainData;
-            var bounds = new Bounds();
-            bounds.SetMinMax(Vector3.zero, new Vector2(tData.size.x, tData.size.z));
+            AssignRegionPositions();
+        }
+    }
 
-            bounds.SetMinMax(terrain.transform.TransformPoint(bounds.min), terrain.transform.TransformPoint(bounds.max));
+    void AssignRegionPositions()
+    {
+        var terrain = GameObject.FindGameObjectWithTag("Terrain");
+        tData = terrain.GetComponent<Terrain>().terrainData;
 
-            RegionPositions = new Dictionary<Regions, Rect>();
-            Rect temp;
-            foreach (var key in value.Keys)
+        //Create a new bounds to represent our terrain
+        var bounds = new Bounds();
+        bounds.SetMinMax(Vector3.zero, new Vector2(tData.size.x, tData.size.z));
+        bounds.SetMinMax(terrain.transform.TransformPoint(bounds.min), terrain.transform.TransformPoint(bounds.max));
+
+        RegionPositions = new Dictionary<Regions, Rect>();
+        Rect temp;
+        foreach (var key in MapAlignment.Keys)
+        {
+
+            switch (key)
             {
-                
-                switch(key)
-                {
-                    case Corners.BottomLeft:
-                        temp = new Rect(new Vector2(bounds.min.x + bounds.extents.x, bounds.min.y + bounds.extents.y), new Vector2(bounds.extents.x, bounds.extents.y));
-                        break;
-                    case Corners.BottomRight:
-                        temp = new Rect(new Vector2(bounds.min.x, bounds.min.y + bounds.extents.y), new Vector2(bounds.extents.x, bounds.extents.y));
-                        break;
-                    case Corners.TopLeft:
-                        temp = new Rect(new Vector2(bounds.min.x + bounds.extents.x, bounds.min.y), new Vector2(bounds.extents.x, bounds.extents.y));
-                        break;
-                    default:
-                        temp = new Rect(bounds.min, new Vector2(bounds.extents.x, bounds.extents.y));
-                        break;
-                }
-                if(!RegionPositions.Keys.Contains(value[key]))
-                    RegionPositions.Add(value[key], temp);
-
-                
-                
+                case Corners.BottomLeft:
+                    temp = new Rect(new Vector2(bounds.min.x + bounds.extents.x, bounds.min.y + bounds.extents.y), new Vector2(bounds.extents.x, bounds.extents.y));
+                    break;
+                case Corners.BottomRight:
+                    temp = new Rect(new Vector2(bounds.min.x, bounds.min.y + bounds.extents.y), new Vector2(bounds.extents.x, bounds.extents.y));
+                    break;
+                case Corners.TopLeft:
+                    temp = new Rect(new Vector2(bounds.min.x + bounds.extents.x, bounds.min.y), new Vector2(bounds.extents.x, bounds.extents.y));
+                    break;
+                default:
+                    temp = new Rect(bounds.min, new Vector2(bounds.extents.x, bounds.extents.y));
+                    break;
             }
 
-           
+            //During testing, there might be multiples of regions
+            if (!RegionPositions.Keys.Contains(MapAlignment[key]))
+                RegionPositions.Add(MapAlignment[key], temp);
         }
     }
 
@@ -94,41 +98,34 @@ public class Manager : MonoBehaviour {
 
         Players = GameObject.FindGameObjectsWithTag("Player").ToList();
 
+        //Clear the scene of any lingering test players
         if (CurrentState != States.GameIsGoing)
         {
-            foreach(var p in Players)
+            foreach (var p in Players)
             {
                 GameObject.Destroy(p);
             }
-            
+
         }
 
         Players = GameObject.FindGameObjectsWithTag("Player").ToList();
 
         SetProperties();
 
-        (new CreateWalls()).BuildWalls(Resources.LoadAll<GameObject>("Buildings/Wall").First(w => w.GetType().Name.Contains("GameObject")));
+        //Create Walls
+        SpawnManager.SpawnWalls();
 
-        SpawnTrees();
+        //Create Trees
+        SpawnManager.SpawnTrees(RegionPositions);
 
-        var baseSpawner = new BaseSpawn();
-        var firstBase = RegionPositions.Keys.ToArray()[rand.Next() % RegionPositions.Count];
-        Bases.Add(baseSpawner.SpawnBase(RegionPositions[firstBase]));
-        Teams.Add(new Team(global::Teams.Alpha, Bases.First()));
-        Regions secondBase;
-        do
-        {
-            secondBase = RegionPositions.Keys.ToArray()[rand.Next() % RegionPositions.Count];
-        } while (secondBase == firstBase);
+        //SpawnBases; Choose the spawn regions randomly
+        SpawnManager.SpawnBases(RegionPositions);
 
-        Bases.Add(baseSpawner.SpawnBase(RegionPositions[secondBase]));
-        Teams.Add(new Team(global::Teams.Beta, Bases.Last()));
+        //Spawn Enemies
+        SpawnManager.SpawnEnemies(RegionPositions, NumberOfCommonEnemiesAtOneTime);
 
-        
-
-        SpawnEnemies();
-
-        SetSkybox();
+        //Assign A SkyBox
+        AssignSkybox();
 
         foreach (var b in Bases)
             GameObject.Destroy(b.GetComponent<BoxCollider>());
@@ -138,13 +135,13 @@ public class Manager : MonoBehaviour {
     }
 
     // Use this for initialization
-    void Start () {
+    void Start() {
 
-            
+
     }
-	
-	// Update is called once per frame
-	void Update () {
+
+    // Update is called once per frame
+    void Update() {
 
         UpdateProperties();
     }
@@ -176,66 +173,13 @@ public class Manager : MonoBehaviour {
         if (Players.Count > 0 && CurrentState == States.Setup)
             CurrentState = States.GameIsGoing;
         else if (CurrentState == States.GameIsGoing && Players.Count == 0)
-            CurrentState = States.GameIsOver;       
+            CurrentState = States.GameIsOver;
     }
 
-    void SetSkybox()
+    void AssignSkybox()
     {
         RenderSettings.skybox = SkyBoxes.ToArray()[rand.Next() % SkyBoxes.Count];
-    }
-
-    void SpawnTrees()
-    {
-        List<TreeBase> treeClasses = new List<TreeBase>();
-        foreach(var r in RegionPositions.Keys)
-        {
-            treeClasses.Add(new TreeBase(RegionPositions[r], r, r == Regions.Desert ? RatingScale.Two : RatingScale.Eight));
-        }
-
-        foreach (var t in treeClasses)
-            t.SpawnTrees();
-    }
-
-    public void SpawnEnemies()
-    {
-        if (Enemies == null)
-        {
-            SetProperties();
-
-            foreach (var e in Enemies)
-            {
-                GameObject.Destroy(e);
-            }
-        }
-        //var usedRegions = new List<Regions>();
-        foreach (var region in RegionPositions.Keys)
-        {
-            for(int i = 0; i < NumberOfCommonEnemiesAtOneTime; i++)
-            //for (int i = 0; i < 1; i++)
-            {
-                var enemy = GetCommonEnemy(region);
-                if(enemy != null)
-                {
-                    var obj = Instantiate(enemy, GetNextPosition(), Quaternion.Euler(Vector3.zero));
-                    var scorpionCollider = obj.GetComponent<BoxCollider>();
-                    
-                    foreach (var b in Bases)
-                    {
-                        var baseCollider = b.GetComponent<BoxCollider>();
-                        if (baseCollider.bounds.Contains(scorpionCollider.bounds.min) || baseCollider.bounds.Contains(scorpionCollider.bounds.max) 
-                            || baseCollider.bounds.Contains(new Vector3(scorpionCollider.bounds.min.x, scorpionCollider.bounds.min.y, scorpionCollider.bounds.max.z)) || baseCollider.bounds.Contains(new Vector3(scorpionCollider.bounds.max.x, scorpionCollider.bounds.max.y, scorpionCollider.bounds.min.z)))
-                        {
-                            GameObject.Destroy(obj);
-                            i--;
-                            break;
-                        }
-                    }
-                }
-
-            }
-
-        }
-    }
+    }    
 
     public static Teams AssignPlayerToTeam(GameObject player, out Vector3 startingPosition, out GameObject assignedBase)
     {
@@ -261,45 +205,7 @@ public class Manager : MonoBehaviour {
         startingPosition = spawnPoint.Value;
 
         return teamName;
-    }
-
-    public Vector3 GetNextPosition()
-    {
-        if (currentPosition == null)
-        {
-            currentPosition = Vector3.zero;
-            return currentPosition;
-        }
-
-        var i = rand.Next() % 100 * 10;
-
-        if (currentPosition.x < 499)
-        {
-            currentPosition = new Vector3(currentPosition.x + i, 0, currentPosition.z);
-        } else
-        {
-            currentPosition = new Vector3(0, 0, currentPosition.z+i);
-        }
-
-
-        return currentPosition;
-    }
-
-    GameObject GetCommonEnemy(Regions region)
-    {
-        var regionEnemies = new List<GameObject>();
-        foreach (var e in EnemyPrefabs)
-        {
-            var properties = GetInactiveCompoent<EnemySetupProps>(e);
-            if (properties.primaryRegion == region && properties.rarity == Rarity.Common)
-            {
-                regionEnemies.Add(e);
-            }
-
-        }
-
-        return regionEnemies.Count == 0 ? null : regionEnemies[rand.Next() % regionEnemies.Count];
-    }
+    }      
 
     public static GameObject GetResource(Regions region, float probabilityOfRareDrop = 0)
     {
@@ -321,11 +227,6 @@ public class Manager : MonoBehaviour {
     {
         return ResourcePrefabs.FirstOrDefault(r => r.name.ToLower().Contains(name.ToLower()));        
     }
-
-    //public static GameObject GetResource(string name)
-    //{
-
-    //}
 }
 
 public enum Teams

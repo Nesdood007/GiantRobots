@@ -13,6 +13,7 @@ public abstract class RegionBase
     RatingScale currentHillHeight;
     public readonly float sin45Deg = Mathf.Abs(Mathf.Sin(Mathf.PI/4f));
     public static readonly float GrasslandFadeRadius = 50f;
+    int grasslandTexutreIndex = -1;
 
     public RegionBase(int mapResoultion, int terrainHeight, Corners corner, Regions region, RatingScale maxHeight, RatingScale minHeight, RatingScale hillHeight, RatingScale hillyness, RatingScale hillWidth)
     {
@@ -51,7 +52,7 @@ public abstract class RegionBase
 
     public abstract float[,] GetMap();
 
-    public abstract float[,,] GetTerrainMap(TerrainData data);
+    public abstract float[,,] CreateTextureMap(TerrainData data);
 
     public int Length
     {
@@ -210,7 +211,7 @@ public abstract class RegionBase
 
     public bool TextureIsInGrasslands(int x, int y)
     {
-        return Mathf.Pow(Length/2f - x , 2) + Mathf.Pow(Length / 2f - y, 2) <= (GrassLandsRadius * GrassLandsRadius)*.33;
+        return Mathf.Pow(Length / 2f - x, 2) + Mathf.Pow(Length / 2f - y, 2) <= (GrassLandsRadius * GrassLandsRadius)*.33;
     }
 
     protected float GetMaxHeight(List<float> heights)
@@ -222,14 +223,26 @@ public abstract class RegionBase
         return max;
     }
 
-    public float PercentAwayFromGrassland(int x, int y)
-    {
-        return ((Mathf.Pow(Length/2f - x, 2f) + Mathf.Pow(Length/2f - y, 2f)) - (GrassLandsRadius* GrassLandsRadius)) / (GrasslandFadeRadius* GrasslandFadeRadius);
-    }
+    //public float PercentAwayFromGrassland(int x, int y)
+    //{
+    //    return TerrainModifier.Grasslands;
+    //}
 
-    public void SetGrasslands(ref float[,,] map)
+    public void SetGrasslands(ref float[,,] map, SplatPrototype[] splats)
     {
         var length = map.GetLength(0);
+
+        if(grasslandTexutreIndex < 0)
+        {
+            for (int i = 0; i < splats.Length; i++) {
+                var splat = splats[i];
+                if (splat.texture.name.ToLower().Contains("grass"))
+                {
+                    grasslandTexutreIndex = i;
+                    break;
+                }
+            }
+        }
 
         for(int j = 0; j < length; j++)
         {
@@ -237,8 +250,13 @@ public abstract class RegionBase
             {
                 if(TextureIsInGrasslands(i, j))
                 {
-                    map[i, j, 0] = 0;
-                    map[i, j, 1] = 1f;
+                    for (int z = 0; z < splats.Length; z++)
+                    {
+                        if(z == grasslandTexutreIndex)
+                            map[i, j, z] = 1f;
+                        else
+                            map[i, j, z] = 0f;
+                    }
                 }
             }
         }
@@ -250,7 +268,7 @@ public abstract class RegionBase
     {
         bool canCreateMountain;
         List<float> heights = new List<float>();
-
+        
         //Debug.Log(Length);
 
         for (int j = 0; j < Length; j++)
@@ -328,7 +346,7 @@ public class Desert : RegionBase
 
     }
 
-    public override float[,,] GetTerrainMap(TerrainData data)
+    public override float[,,] CreateTextureMap(TerrainData data)
     {
         var map = new float[data.alphamapWidth, data.alphamapHeight, Terrain.activeTerrain.terrainData.splatPrototypes.Length];
         for (int j = 0; j < data.alphamapHeight; j++)
@@ -341,17 +359,13 @@ public class Desert : RegionBase
                 //    map[i, j, 1] = 1f;
                 //    continue;
                 //}
-                var fractionAway = PercentAwayFromGrassland(i, j);
-                if(fractionAway > 1f)
+                var fractionAway = TerrainModifier.GrasslandsHeightMap.PointIsInCircle(i, j);
+                if(!TerrainModifier.GrasslandsHeightMap.PointIsInCircle(i, j))
                 {
                     map[i, j, 0] = 1f;
                     map[i, j, 1] = 0;
                 }
-                else
-                {
-                    map[i, j, 0] = 1f- fractionAway;
-                    map[i, j, 1] = fractionAway;
-                }
+               
                 //var normX = (float)(i * 1.0 / (data.alphamapWidth - 1));
                 //var normY = (float)(j * 1.0 / (data.alphamapHeight - 1));
 
@@ -397,43 +411,10 @@ public class Mountains : RegionBase
 
     }
 
-    public override float[,,] GetTerrainMap(TerrainData data)
+    public override float[,,] CreateTextureMap(TerrainData data)
     {
         var map = new float[data.alphamapWidth, data.alphamapHeight, Terrain.activeTerrain.terrainData.splatPrototypes.Length];
-        for (int j = 0; j < data.alphamapHeight; j++)
-        {
-            for (int i = 0; i < data.alphamapWidth; i++)
-            {
-                //if(IsInGrasslands(i, j))
-                //{
-                //    map[i, j, 0] = 0;
-                //    map[i, j, 1] = 1f;
-                //    continue;
-                //}
-                var fractionAway = PercentAwayFromGrassland(i, j);
-                if (fractionAway > 1f)
-                {
-                    map[i, j, 0] = 1f;
-                    map[i, j, 1] = 0;
-                }
-                else
-                {
-                    map[i, j, 0] = 1f - fractionAway;
-                    map[i, j, 1] = fractionAway;
-                }
-                //var normX = (float)(i * 1.0 / (data.alphamapWidth - 1));
-                //var normY = (float)(j * 1.0 / (data.alphamapHeight - 1));
-
-                //// Get the steepness value at the normalized coordinate.
-                //var angle = data.GetSteepness(normX, normY);
-
-                //// Steepness is given as an angle, 0..90 degrees. Divide
-                //// by 90 to get an alpha blending value in the range 0..1.
-                //var frac = 1;
-                //map[i, j, 0] = frac;
-                //map[i, j, 1] = 1 - frac;
-            }
-        }
+        
 
         return map;
     }

@@ -16,6 +16,7 @@ public class TerrainModifier : MonoBehaviour
     public Texture2D mountainSnow;
     
     public static Cicle Grasslands;
+    public static Cicle GrasslandsHeightMap;
 
     bool useSingleMap = false;
     void Awake()
@@ -28,11 +29,14 @@ public class TerrainModifier : MonoBehaviour
         SetTextures();
 
         var regions = new List<RegionBase>() { new Desert(length, height, Corners.TopRight), new Mountains(length, height, Corners.TopLeft), new Desert(length, height, Corners.BottomLeft), new Desert(length, height, Corners.BottomRight) };
-        
+
+        Grasslands = new Cicle((regions.First().GrassLandsRadius / terrain.terrainData.heightmapResolution) * terrain.terrainData.size.x, new Vector2(terrain.terrainData.size.x * .5f, terrain.terrainData.size.z * .5f));
+        GrasslandsHeightMap = new Cicle(regions.First().GrassLandsRadius, new Vector2(length * .5f, length * .5f));
+
         var map = new float[length, length];
 
 
-
+        //Create Region Height Maps
         if (useSingleMap)
         {
             var currentMap = regions.First((r) => r.Corner == Corners.TopLeft).GetMap();
@@ -64,21 +68,19 @@ public class TerrainModifier : MonoBehaviour
             }
         }
 
-   
-        terrain.terrainData.SetHeights(0, 0, map);
+        //Set Terrain Height Map
+        terrain.terrainData.SetHeights(0, 0, map);       
 
-        //TopLeft
-       
-
-        Grasslands = new Cicle(2*(regions.First().GrassLandsRadius/ terrain.terrainData.heightmapResolution)* terrain.terrainData.size.x, new Vector2(terrain.terrainData.size.x*.5f, terrain.terrainData.size.z*.5f));
-
+        //Keep trach of what corner each region is in
         var mapAlignment = new Dictionary<Corners, Regions>();
         foreach (var r in regions)
             mapAlignment.Add(r.Corner, (Regions)Enum.Parse(typeof(Regions), r.GetType().Name.ToString()));
 
+        //Tell the manager where the regions are
         var manager = GameObject.FindGameObjectWithTag("GameManager").GetComponent<Manager>();
         manager.MapAlignment = mapAlignment;
 
+        //Find the maximum height in the current map
         var maxHeight = -1f;
         for (int j = 0; j < map.GetLength(1); j++)
         {
@@ -88,15 +90,17 @@ public class TerrainModifier : MonoBehaviour
              }
         }
 
-        var terrainMap = regions.First().GetTerrainMap(terrain.terrainData);
-        regions.First().SetGrasslands(ref terrainMap);
+        //Get the texture map for each terrain
+        var terrainMap = regions.First().CreateTextureMap(terrain.terrainData);        
+
         foreach (var region in regions)
             region.AssignTextures(mapAlignment.Keys.First(k=>mapAlignment[k] == region.Region), ref terrainMap);
 
-         terrain.terrainData.SetAlphamaps(0, 0, terrainMap);
+        //Set the grasslands
+        regions.First().SetGrasslands(ref terrainMap, terrain.terrainData.splatPrototypes);
 
-        
-
+        //Assign texutres
+        terrain.terrainData.SetAlphamaps(0, 0, terrainMap);       
     }
 
     // Use this for initialization

@@ -26,4 +26,9 @@ public class Cicle  {
     {
         return Mathf.Pow(point.x - Center.x, 2) + Mathf.Pow(point.y - Center.y, 2) < Radius * Radius;
     }
+
+    public bool PointIsInCircle(int x, int y)
+    {
+        return PointIsInCircle(new Vector2(x, y));
+    }
 }
