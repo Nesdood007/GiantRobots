@@ -6,6 +6,9 @@ SomeGameName/[Bb]uild/
 SomeGameName/[Bb]uilds/
 SomeGameName/Assets/AssetStoreTools*
 
+# builds
+Builds/
+
 # Visual Studio 2015 cache directory
 /.vs/
 
