@@ -29,10 +29,7 @@ public class Combat : MonoBehaviour {
     }     
 
     public void OnDeath()
-    { 
-        //Detach the Camera so that it is not destroyed
-        gameObject.transform.Find("CameraRig").GetComponent<CameraMovement>().DetachFromPlayer();
-        
-        Destroy(gameObject);
+    {
+        Destroy(this);
     }
 }

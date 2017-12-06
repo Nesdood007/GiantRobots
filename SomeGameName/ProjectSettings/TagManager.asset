@@ -11,9 +11,6 @@ TagManager:
   - Network Manager
   - Enemy
   - Weapon
-  - Base
-  - Wall
-  - Chest
   layers:
   - Default
   - TransparentFX

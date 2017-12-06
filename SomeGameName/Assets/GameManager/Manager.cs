@@ -152,8 +152,7 @@ public class Manager : MonoBehaviour {
     void SetProperties()
     {
         rand = new System.Random();
-        Players = GameObject.FindGameObjectsWithTag("Player").ToList();
-        Enemies = GameObject.FindGameObjectsWithTag("Enemy").ToList();
+        UpdateProperties();
 
         ResourcePrefabs = Resources.LoadAll<GameObject>("Objects/").ToList();
         ResourceBase component;

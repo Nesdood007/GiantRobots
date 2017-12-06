@@ -46,23 +46,17 @@ public class TreeBase : MonoBehaviour {
 
     public void SpawnTrees()
     {
-        if (SpawnRate == RatingScale.Zero || SpawnRate == RatingScale.Negative)
+        if (SpawnRate == RatingScale.Zero || SpawnRate == RatingScale.One)
             return;
 
         bool spawnNext = false;
-        for(int j = (int)SpawnBounds.yMin; j < SpawnBounds.size.y + (int)SpawnBounds.yMin; j++)
+        for(int j = 0; j < SpawnBounds.size.y; j++)
         {
-            for(int i = (int)SpawnBounds.xMin; i < SpawnBounds.size.x + (int)SpawnBounds.xMin; i++)
+            for(int i = 0; i < SpawnBounds.size.x; i++)
             {
-
-                if(TerrainModifier.Grasslands.PointIsInCircle(new Vector2(i, j)))
-                {
-                    continue;
-                }
-
                 if(spawnNext || rand.Next()%1000 < (int)SpawnRate)
                 {                                       
-                    var pos = new Vector3(i, 0, j);
+                    var pos = new Vector3(SpawnBounds.min.x + i, 0, SpawnBounds.min.y + j);
                     pos.y = Terrain.activeTerrain.SampleHeight(pos);
 
                     var treeObj = GameObject.Instantiate(GetRandomTree(), pos, Quaternion.Euler(Vector3.zero), parent);
