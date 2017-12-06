@@ -4,54 +4,116 @@ using UnityEngine;
 
 public class CameraMovement : MonoBehaviour
 {
-
-    public Vector3 cameraOffset = new Vector3(0, 2, -10);
+    //Move the Camera Rig to the Player if it exists, otherwise find a good spot and chill there for a while
+    public Vector3 cameraOffset;
     public bool useMouse = true;
     public bool invertMouseY = true;
     public float rotationSpeed = 50.0f;
-    TeamInventory teamInventory;
-    //For Inverting Mouse Movement
-    private float mouseYInvert = -1.0f;
-
-    private float radius = 0.0f;
-    private float deg = 0.0f;
-
-    GameObject player;
+    
+    //If Camera is Attached To Player
+    private bool isAttached = false;
+    public bool keepPositionAfterDetach = false;
+    
+    //Default Location of the Camera
+    public Quaternion defPosRotation;
+    public Vector3 defPosPosition;
+    private GameObject camera;
+    
+    //Debugging Attachment
+    public bool forceDetach = false;
+    
+    //Range for Camera
+    public float rotationLimit = 90.0f;
+    
     // Use this for initialization
     void Start()
     {
-        player = transform.parent.gameObject;
-        
-        transform.position = player.transform.position + cameraOffset;
-        //transform.position = player.transform.position + cameraOffset;
-        updatePositioning();
-
+        defPosRotation = gameObject.transform.rotation;
+        defPosPosition = gameObject.transform.position;
+        camera = gameObject.transform.Find("Main Camera").gameObject;
+        if (camera == null) print("Couldn't find Camera");
+        //camera.transform.position = cameraOffset;
+        //camera.transform.rotation = Quaternion.identity;
     }
 
     // Update is called once per frame
     void Update()
     {
-       
-        var mouseY = Input.GetAxis("Mouse Y");
-        float rot = rotationSpeed * Time.deltaTime * mouseY * mouseYInvert;
-        if (useMouse && mouseY != 0)
-        {
-            //if (invertMouseY) mouseYInvert = -1.0f;
-            //else mouseYInvert = 1.0f;
-            //transform.Rotate(new Vector3(rot, 0, 0));
-            //Move Camera up and down.
-            //transform.Translate(new Vector3(Mathf.Cos(rotationSpeed * Time.deltaTime * mouseY * mouseYInvert), Mathf.Sin(rotationSpeed * Time.deltaTime * mouseY * mouseYInvert), 0));
-            //transform.position = new Vector3(0, radius * Mathf.Sin(transform.rotation.eulerAngles.x), 0) + player.transform.position + cameraOffset;
-        }
-
-        //if(Manager.DEBUG)
-        //    transform.position = player.transform.position + cameraOffset;
+        doAttachment();
+        doMovement();
+        print("Angle: " + transform.eulerAngles);
     }
-
     //Call this if camera is repositioned
-    void updatePositioning()
+    void doAttachment()
     {
-        deg = Mathf.Tan(transform.position.y / transform.position.x);
-        radius = Mathf.Pow(transform.position.x, 2) + Mathf.Pow(transform.position.y, 2);
+        if (isAttached) {
+          if (gameObject.transform.parent == null || forceDetach) {
+            print ("Detaching Camera");
+            if (!keepPositionAfterDetach) resetPosition();
+            isAttached = false;
+            //TODO Remove This
+            //Debug.Break();
+            
+          }
+        } else {
+          GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+          if (players == null || forceDetach) return;
+          foreach(GameObject g in players) {
+            Movement mov = g.GetComponent(typeof(Movement)) as Movement;
+            if (mov.isLocalPlayer) {
+              //print("Found a Local Player!");
+              isAttached = true;
+              //Set the position and rotation to zero
+              print("[Before Parent Set]Pos, Rot: " + gameObject.transform.position + " " + gameObject.transform.rotation);
+              gameObject.transform.SetParent(g.transform);
+              transform.position = g.transform.position;
+              //gameObject.transform.position = Vector3.zero;
+              gameObject.transform.rotation = Quaternion.identity;
+              camera.transform.position = camera.transform.position + cameraOffset;
+              camera.transform.rotation = Quaternion.identity;
+              print("[After Parent Set]Pos, Rot: " + gameObject.transform.position + " " + gameObject.transform.rotation);
+              //TODO 
+              //Debug.Break();
+              camera.GetComponent<BGMController>().PlayBGM();//Play BGM When player is found
+            }
+          }
+        }
+    }
+    
+    //Reset the Position of the Camera to Default Position
+    void resetPosition() {
+      gameObject.transform.SetParent(null);
+      gameObject.transform.position = defPosPosition;
+      gameObject.transform.rotation = defPosRotation;
+    }
+    
+    //Move the Camera
+    void doMovement() {
+        if (!isAttached) return;
+        var deltaY = 0.0f;
+        var deltaX = 0.0f;
+        if (useMouse) {
+            deltaY = Input.GetAxis("Mouse Y");
+            deltaX = Input.GetAxis("Mouse X");
+        } else {
+            deltaX = Input.GetAxis("Camera X");
+            deltaY = Input.GetAxis("Camera Y");
+        }
+        float invertY = 1.0f;
+        if (invertMouseY) invertY = -1.0f;
+        float rotX = rotationSpeed * Time.deltaTime * deltaX;
+        float rotY = rotationSpeed * Time.deltaTime * deltaY * invertY;
+        //Vector3 rot = new Vector3(rotY, 0, 0);
+        Vector3 rot = transform.eulerAngles;
+        //rot.x = Mathf.Clamp(rot.x + rotY, -rotationLimit, rotationLimit);
+        rot.x += rotY;
+        transform.eulerAngles = rot;
+        //Clamp the Rotation value
+        
+    }
+    
+    public void DetachFromPlayer() {
+      gameObject.transform.parent = null;
+      camera.GetComponent<BGMController>().PlayInter();
     }
 }
