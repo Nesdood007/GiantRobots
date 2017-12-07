@@ -66,15 +66,14 @@ public class CameraRigMovement : MonoBehaviour
               //Set the position and rotation to zero
               //print("[Before Parent Set]Pos, Rot: " + gameObject.transform.position + " " + gameObject.transform.rotation);
               gameObject.transform.SetParent(g.transform);
-              transform.position = g.transform.position;
-              //gameObject.transform.position = Vector3.zero;
-              gameObject.transform.rotation = Quaternion.identity;
-              camera.transform.position = camera.transform.position + cameraOffset;
+              gameObject.transform.position = g.transform.position;
+              gameObject.transform.rotation = g.transform.rotation;//Quaternion.identity
+              camera.transform.position = gameObject.transform.position + cameraOffset;
               camera.transform.rotation = Quaternion.identity;
               //print("[After Parent Set]Pos, Rot: " + gameObject.transform.position + " " + gameObject.transform.rotation);
               //TODO 
               //Debug.Break();
-              camera.GetComponent<BGMController>().PlayBGM();//Play BGM When player is found
+              //camera.GetComponent<BGMController>().PlayBGM();//Play BGM When player is found
             }
           }
         }
@@ -105,8 +104,8 @@ public class CameraRigMovement : MonoBehaviour
         float rotY = rotationSpeed * Time.deltaTime * deltaY * invertY;
         //Vector3 rot = new Vector3(rotY, 0, 0);
         Vector3 rot = transform.eulerAngles;
-        //rot.x = Mathf.Clamp(((rot.x + rotY) % 360) + rotationLimit, 0, 2 * rotationLimit) - rotationLimit;
-        rot.x += rotY;
+        rot.x = Mathf.Clamp((rot.x + rotY), 0, rotationLimit);
+        //rot.x += rotY;
         transform.eulerAngles = rot;
         //Clamp the Rotation value
         
@@ -114,6 +113,6 @@ public class CameraRigMovement : MonoBehaviour
     
     public void DetachFromPlayer() {
       gameObject.transform.parent = null;
-      camera.GetComponent<BGMController>().PlayInter();
+      //camera.GetComponent<BGMController>().PlayInter();
     }
 }

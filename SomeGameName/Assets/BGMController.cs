@@ -1,29 +1,38 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.Networking;
 using UnityEngine;
 
 /**This controls the Playing of Background Music in the Game
 
 */
-public class BGMController : NetworkBehaviour {
+public class BGMController : MonoBehaviour {
 	public GameObject bgm; //Background Music
   public GameObject connWaiting; //Connection Waiting Music
   public GameObject bgmFinal; //Final Fight Music
+  
+  private Manager manager; //Get the Manager of the game to check the state
+  
+  public bool isPlaying;
   
   private GameObject currPlaying; //Currently Playing Audio
   // Use this for initialization
 	void Start () {
 		PlayAudio(connWaiting);
+    isPlaying = false;
+    manager = GameObject.FindWithTag("GameManager").GetComponent<Manager>();
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		
+		if (!isPlaying && Manager.CurrentState == States.GameIsGoing ) {
+      isPlaying = true;
+      PlayAudio(bgm);
+    }
 	}
   
-  //Inhereted from NetworkBehaviour
-  void OnStartClient() {
+  void OnPlayerConnected(NetworkPlayer player) {
+    if (isPlaying) return;
+    isPlaying = true;
     PlayAudio(bgm);
   }
   
