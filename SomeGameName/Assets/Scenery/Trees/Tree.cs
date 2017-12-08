@@ -20,6 +20,12 @@ public class Tree : MonoBehaviour {
             Destroy(gameObject);
     }
 
+    private void OnCollisionStay(Collision collision)
+    {
+        if (collision.gameObject.tag == "Base" && Manager.CurrentState == States.Setup)
+            Destroy(gameObject);
+    }
+
     private void OnTriggerEnter(Collider collider)
     {
         if (collider.gameObject.tag == "Base" && Manager.CurrentState == States.Setup)

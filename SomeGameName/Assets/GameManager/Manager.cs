@@ -4,6 +4,7 @@ using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections.ObjectModel;
+using UnityEngine.Networking;
 
 public class Manager : MonoBehaviour {
 
@@ -137,10 +138,11 @@ public class Manager : MonoBehaviour {
             obj.SendMessage("SetWanderingBounds", tData);
     }
 
+
     // Use this for initialization
     void Start () {
+       
 
-            
     }
 	
 	// Update is called once per frame

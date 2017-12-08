@@ -1,19 +1,29 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class Stats : MonoBehaviour {
 
     
     public int CurrentHealth = 100;
     public int StartingHealth = 100;
-    public int Armor = 0;
+    public float Armor = 0;
     public int Strength = 10;
     Dictionary<Effects, int> Resistances;
     Dictionary<Effects, int> DamageEffects;
     public Dictionary<Effects, float> ResistancePercentages;
     Dictionary<Effects, float> DamageEffectsPercentages;
+    public GUIStyle style;
+    Dictionary<EquipmentType, List<Effects>> equiptedEffects;
+    Dictionary<EquipmentType, float> equiptedArmor;
 
+
+    public int xOffset, yOffset;
+    int damageToShow = 0;
+    bool showDamage = false;
+    float startTime;
+    float duration = 1;
 
     // Use this for initialization
     void Start () {
@@ -21,12 +31,70 @@ public class Stats : MonoBehaviour {
         DamageEffects = new Dictionary<Effects, int>();
         ResistancePercentages = new Dictionary<Effects, float>();
         DamageEffectsPercentages = new Dictionary<Effects, float>();
+        equiptedEffects = new Dictionary<EquipmentType, List<Effects>>();
+        equiptedArmor = new Dictionary<EquipmentType, float>();
     }
 	
 	// Update is called once per frame
 	void Update () {
 		
 	}
+
+    public void AddEquiptment(EquipmentType equiptment, List<CraftedResourcesType> resournces)
+    {
+        var effects = new List<Effects>();
+        var armor = 0f;
+        foreach(var r in resournces)
+        {           
+            switch(r)
+            {
+                case CraftedResourcesType.S_304:
+                    armor+=2;                    
+                    break;
+                case CraftedResourcesType.S_316:
+                    effects.Add(Effects.Corrosion);
+                    armor += 1.5f*2;
+                    break;
+                case CraftedResourcesType.S_316Ti:
+                    effects.Add(Effects.Heat);
+                    armor += 1.5f*2;
+                    break;
+                case CraftedResourcesType.S_430:
+                    effects.Add(Effects.Cold);
+                    armor += 1.5f*2;
+                    break;
+                case CraftedResourcesType.S_440C:
+                    armor += 2f*2;
+                    break;
+            }
+        }
+
+        equiptedEffects.Add(equiptment, effects);
+        equiptedArmor.Add(equiptment, armor);
+        Debug.Log(armor);
+        Armor += armor;
+        foreach (var r in effects)
+            AddResistance(r);
+    }
+
+    public void RemoveEquiptemnet(EquipmentType equiptment)
+    {
+        if (!equiptedArmor.ContainsKey(equiptment))
+            return;
+
+        Armor -= equiptedArmor[equiptment];
+        foreach (var r in equiptedEffects[equiptment])
+            RemoveResistance(r);
+        equiptedArmor.Remove(equiptment);
+        equiptedEffects.Remove(equiptment);
+    }
+
+    public List<EquipmentType> GetEquiptment()
+    {
+        if (equiptedArmor.Count == 0)
+            return new List<EquipmentType>();
+        return equiptedArmor.Keys.ToList();
+    }
 
     public void CalculateDamageEffects()
     {
@@ -117,7 +185,11 @@ public class Stats : MonoBehaviour {
 
     public void TakeDamage(int damage)
     {
-        CurrentHealth -= (int)(damage * 1-( Armor/10f));
+        startTime = Time.time;
+        showDamage = true;
+        damageToShow = (int)(damage * (1 - (Armor / 10f)));
+        Debug.Log("DMG: " + (damage * (1 - (Armor / 10f))));
+        CurrentHealth -= damage;
     }
 
     public void TakeDamage(int damage, Effects effect)
@@ -128,5 +200,20 @@ public class Stats : MonoBehaviour {
         {
             CurrentHealth -= ((int)Mathf.Ceil(ResistancePercentages[effect] * damage));
         }
-    }    
+    }
+
+
+    private void OnGUI()
+    {
+        if (!showDamage)
+            return;
+
+        if(Time.time < startTime + duration)
+        {
+            GUI.Box(new Rect(xOffset, yOffset, 10, 10), "-" + damageToShow.ToString(), style);
+        } else
+        {
+            showDamage = false;
+        }
+    }
 }

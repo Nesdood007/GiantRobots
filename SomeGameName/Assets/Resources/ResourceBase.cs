@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using System.Linq;
 
 
 
@@ -86,6 +87,11 @@ public class ResourceBase : MonoBehaviour {
     {
         get;
         private set;
+    }
+
+    public static List<EquipmentType> GetBuildsInto(CraftedResourcesType type)
+    {
+        return Enum.GetNames(typeof(EquipmentType)).Select((s) => (EquipmentType)Enum.Parse(typeof(EquipmentType), s)).ToList();
     }
 
     public static List<CraftedResourcesType> GetBuildsInto(ResourceTypes type)

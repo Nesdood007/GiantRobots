@@ -56,7 +56,6 @@ GameObject:
   - component: {fileID: 124686264148345254}
   - component: {fileID: 81621510239691774}
   - component: {fileID: 114416340414380358}
-  - component: {fileID: 114400291060370014}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -469,47 +468,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b0a91fb5d601f0469757eb402bc255a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cameraOffset: {x: 0, y: 1.5, z: -3}
+  cameraOffset: {x: 0, y: 1, z: -3}
   useMouse: 1
   invertMouseY: 1
   rotationSpeed: 50
-  keepPositionAfterDetach: 1
+  keepPositionAfterDetach: 0
   defPosRotation: {x: 0, y: 0, z: 0, w: 0}
   defPosPosition: {x: 0, y: 0, z: 0}
   forceDetach: 0
   rotationLimit: 90
---- !u!114 &114400291060370014
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1669265717372874}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 372142912, guid: dc443db3e92b4983b9738c1131f555cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_SceneId:
-    m_Value: 0
-  m_AssetId:
-    i0: 42
-    i1: 252
-    i2: 209
-    i3: 48
-    i4: 94
-    i5: 232
-    i6: 65
-    i7: 212
-    i8: 43
-    i9: 181
-    i10: 213
-    i11: 14
-    i12: 72
-    i13: 101
-    i14: 68
-    i15: 175
-  m_ServerOnly: 0
-  m_LocalPlayerAuthority: 0
 --- !u!114 &114416340414380358
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -524,6 +491,7 @@ MonoBehaviour:
   bgm: {fileID: 1217984580544090}
   connWaiting: {fileID: 1744049649237834}
   bgmFinal: {fileID: 1788170272639574}
+  isPlaying: 0
 --- !u!124 &124686264148345254
 Behaviour:
   m_ObjectHideFlags: 1

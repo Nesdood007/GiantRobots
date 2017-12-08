@@ -41,7 +41,7 @@ public class CameraRigMovement : MonoBehaviour
     {
         doAttachment();
         doMovement();
-        print("Angle: " + transform.eulerAngles);
+        //print("Angle: " + transform.eulerAngles);
     }
     //Call this if camera is repositioned
     void doAttachment()

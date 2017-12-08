@@ -26,24 +26,37 @@ public class Inventory : MonoBehaviour {
     public TeamInventory teamInventory;
     
     List<Texture2D> selectedItems;
+    List<Texture2D> equiptedItems;
 
     public GUIStyle normalButtonSkin;
     public GUIStyle activeButtonSkin;
+    public GUIStyle equiptedButtonSkin;
 
     Texture2D draggingTexture = null;
+
+
+    Stats stats;
+
+    static Dictionary<EquipmentType, List<CraftedResourcesType>> craftedItems;
 
     void Awake()
     {
         items = new Dictionary<string, int>();
         selectedItems = new List<Texture2D>();
-        
+        equiptedItems = new List<Texture2D>();
+        craftedItems = new Dictionary<EquipmentType, List<CraftedResourcesType>>();
     }
 
-    // Use this for initialization
+   
+ 
+       
+
+        // Use this for initialization
     void Start() {
         inventoryRect = new Rect(new Vector2(Screen.width * inventoryRectStartXPercent, Screen.height * inventoryRectStartYPercent), new Vector2(Screen.width * inventoryRectWidthPercent, Screen.height * inventoryRectHeightPercent));
         textureSize = new Vector2(inventoryRect.size.x * texturePercentage, inventoryRect.size.x * texturePercentage);
         textureOffset = new Vector2(inventoryRect.size.x * (1 - texturePercentage * columns) / (columns * 2), inventoryRect.size.y * yMargin);
+        stats = GetComponent<Stats>();
     }
 
     // Update is called once per frame
@@ -51,7 +64,9 @@ public class Inventory : MonoBehaviour {
         if (Input.GetKeyDown(KeyCode.B))
             showInventory = !showInventory;
 
-        if(showInventory && Input.GetMouseButtonUp(0) && draggingTexture != null)
+        equiptedItems = stats.GetEquiptment().Select((e) => Manager.ResourceTextures.FirstOrDefault((t) => t.name == Char.ToLower(e.ToString()[0]) + e.ToString().Substring(1))).ToList();
+
+        if (showInventory && Input.GetMouseButtonUp(0) && draggingTexture != null)
         {           
             if(teamInventory.playerInBounds && teamInventory.showInventory)
             {
@@ -79,7 +94,7 @@ public class Inventory : MonoBehaviour {
             }
             selectedItems.Clear();
         }
-        
+       
 
         items = items.Count > 1 ? items.OrderBy(kvp => kvp.Key).ToDictionary(kvp => kvp.Key, kvp => kvp.Value) : items;
 
@@ -90,6 +105,9 @@ public class Inventory : MonoBehaviour {
             textureOffset = new Vector2(inventoryRect.size.x * (1 - texturePercentage * columns) / (columns * 2), inventoryRect.size.y * .05f);
         }
     }
+
+    public int selGridInt = 0;
+    public string[] selStrings = new string[] { "Grid 1", "Grid 2", "Grid 3", "Grid 4" };
 
     private void OnGUI()
     {
@@ -106,9 +124,11 @@ public class Inventory : MonoBehaviour {
         bool setHover = false;
         string hoverText = null;
         Rect hoverRect = new Rect();
-
+        //List<string> names = new List<string>();
+        
         foreach (var i in items)
         {
+            
             Vector2 currentPosition = new Vector2(inventoryRect.x + xDisplacement, inventoryRect.y + yDisplacement) + textureOffset;
 
             if (currentPosition.y > inventoryRect.max.y)
@@ -124,12 +144,19 @@ public class Inventory : MonoBehaviour {
                 if (texture == null)
                     return;
             }
-            GUI.Box(new Rect(currentPosition, textureSize), string.Empty, selectedItems.Any(item => item.name == texture.name) ? activeButtonSkin : normalButtonSkin);//, new Rect(new Vector2(inventoryRect.x + xDisplacement, inventoryRect.y + yDisplacement)));            
+            if(selectedItems.Any(item => item.name == texture.name))
+                GUI.Box(new Rect(currentPosition, textureSize), string.Empty,  activeButtonSkin);//, new Rect(new Vector2(inventoryRect.x + xDisplacement, inventoryRect.y + yDisplacement)));            
+            else if(equiptedItems.Any(item => item.name == texture.name))
+                GUI.Box(new Rect(currentPosition, textureSize), string.Empty, equiptedButtonSkin);
+            else
+                GUI.Box(new Rect(currentPosition, textureSize), string.Empty, normalButtonSkin);
 
-            var currButton = new Rect(new Vector2(currentPosition.x - buttonRadius, currentPosition.y - buttonRadius), new Vector2(textureSize.x + buttonRadius * 2, textureSize.y + buttonRadius * 2));            
+            var currButton = new Rect(new Vector2(currentPosition.x - buttonRadius, currentPosition.y - buttonRadius), new Vector2(textureSize.x + buttonRadius * 2, textureSize.y + buttonRadius * 2));
+
+
             
 
-            if(Input.GetMouseButtonDown(0) && currButton.Contains(Input.mousePosition))
+            if (Input.GetMouseButtonDown(0) && currButton.Contains(Input.mousePosition))
             {
                 if (draggingTexture == null)
                 {
@@ -158,8 +185,18 @@ public class Inventory : MonoBehaviour {
                     {
                         selectedItems.Add(texture);
                     }
+                } else if(e.button == 1 && Enum.GetNames(typeof(EquipmentType)).Any((s) => Char.ToLower(s[0]) + s.Substring(1) == texture.name))
+                {
+
+                    var item = (EquipmentType)Enum.Parse(typeof(EquipmentType), Char.ToUpper(texture.name[0]) + texture.name.Substring(1));
+                    if (equiptedItems.Any(t => t.name == texture.name))
+                        stats.RemoveEquiptemnet(item);
+                    else
+                        stats.AddEquiptment(item, craftedItems[item]);
                 }
             }
+
+            //names.Add(texture.name[0] + texture.name.Substring(1) + " (" + items[FormatKey(texture.name, ObjectType.Resource)] + ")");
 
             if (currButton.Contains(Event.current.mousePosition))
             {
@@ -188,7 +225,9 @@ public class Inventory : MonoBehaviour {
 
         }
 
-        if(draggingTexture != null)
+        //selGridInt = GUI.SelectionGrid(inventoryRect, selGridInt, names.ToArray(), 2);
+
+        if (draggingTexture != null)
         {
             var pos = Event.current.mousePosition;
             var size = new Vector2(textureSize.x + buttonRadius * 2, textureSize.y + buttonRadius * 2);
@@ -215,21 +254,80 @@ public class Inventory : MonoBehaviour {
             return false;
 
         List<GameObject> prefabs = new List<GameObject>();
+        List<CraftedResourcesType> craftedResources = new List<CraftedResourcesType>();
         GameObject r;
-        List<CraftedResourcesType> possibleCraftedResources = null;
-        var resourceTypes = new List<ResourceTypes>();
+        
+        
         foreach (var texture in textures)
         {
-            r = Manager.GetReource(texture.name);
-            if (r == null)
-                return false;
-            prefabs.Add(r);
+            if (texture.name.ToLower().Contains("s_") || texture.name.ToLower().Contains("b_"))
+                craftedResources.Add((CraftedResourcesType)Enum.Parse(typeof(CraftedResourcesType), texture.name));
+            else
+            {
+                r = Manager.GetReource(texture.name);
+                if (r == null)
+                    return false;
+                prefabs.Add(r);
+            }
             
         }
 
-        ResourceBase tempR;
+        if (prefabs.Count != 0 && craftedResources.Count != 0)
+            return false;
+        else if (prefabs.Count > 0)
+            return TryCraftResource(prefabs, ref name);
+        else
+            return TryCraftEquipment(craftedResources, ref name);
+    }
 
-        foreach(var p in prefabs)
+    static bool TryCraftEquipment(List<CraftedResourcesType> craftedResources, ref string name)
+    {
+        var steelQuantities = new Dictionary<EquipmentType, int>() { { EquipmentType.ChestPlate, 3 }, { EquipmentType.SteelGloves, 1 } };
+        var batteryQuantities = new Dictionary<EquipmentType, int>();
+        var steelCount = 0;
+        var batteryCount = 0;
+        foreach (var r in craftedResources)
+        {
+            switch(r)
+            {
+                case CraftedResourcesType.B_CarbonZinc:
+                case CraftedResourcesType.B_Lithium:
+                case CraftedResourcesType.B_Plasma:                    
+                    batteryCount++;
+                    break;
+                default:
+                    steelCount++;
+                    break;
+            }
+        }
+
+
+        if (batteryCount > 0)
+            return false;
+
+        var key = steelQuantities.Keys.FirstOrDefault((k) => steelQuantities[k] == steelCount);
+        if(steelQuantities[key] > steelCount)
+        {
+            key = steelQuantities.Keys.FirstOrDefault((k) => steelQuantities[k] <= steelCount);
+        }
+        if (steelQuantities[key] > steelCount)
+            return false;
+
+        name = Char.ToLower(key.ToString()[0]) + key.ToString().Substring(1);
+
+        craftedItems.Add(key, craftedResources.Take(steelCount + batteryCount).ToList());
+
+        return true;
+    }
+
+    static bool TryCraftResource(List<GameObject> prefabs, ref string name)
+    {
+        ResourceBase tempR;
+        List<CraftedResourcesType> possibleCraftedResources = null;
+        var resourceTypes = new List<ResourceTypes>();
+
+
+        foreach (var p in prefabs)
         {
             tempR = Manager.GetInactiveCompoent<ResourceBase>(p);
             resourceTypes.Add(tempR.type);
@@ -259,7 +357,7 @@ public class Inventory : MonoBehaviour {
             var currentRequirements = CraftedResources.GetRequirements(currentCraftedResource);
             bool isCorrectMaterial = true;
             foreach (var requirment in currentRequirements)
-            {                
+            {
                 if (!resourceTypes.Contains(requirment))
                 {
                     isCorrectMaterial = false;
@@ -272,7 +370,7 @@ public class Inventory : MonoBehaviour {
                 break;
             }
         }
-        
+
 
         if (material == null)
             return false;

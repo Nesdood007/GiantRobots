@@ -231,6 +231,12 @@ public class Battery : CraftedResources
 }
 
 
+public enum EquipmentType
+{
+    ChestPlate,
+    SteelGloves
+}
+
 public enum CraftedResourcesType
 {
     S_316,
