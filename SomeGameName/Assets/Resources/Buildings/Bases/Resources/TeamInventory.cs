@@ -56,6 +56,7 @@ public class TeamInventory : MonoBehaviour {
         else if (!playerInBounds || (showInventory && Input.GetKeyDown(KeyCode.O)))
             showInventory = false;
 
+
     }
 
     public void AddItem(string item)
@@ -116,7 +117,7 @@ public class TeamInventory : MonoBehaviour {
       
             if (GUI.Button(currButton, texture))
             { }
-            if (Input.GetMouseButtonDown(0) && currButton.Contains(Input.mousePosition))
+            if (Input.GetMouseButtonDown(0) && currButton.Contains(new Vector3(Input.mousePosition.x, Screen.height - Input.mousePosition.y, Input.mousePosition.z)))
             {
                 if (draggingTexture == null)
                 {

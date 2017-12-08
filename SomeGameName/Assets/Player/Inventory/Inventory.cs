@@ -24,7 +24,9 @@ public class Inventory : MonoBehaviour {
     Vector2 textureSize;
     Vector2 textureOffset;
     public TeamInventory teamInventory;
-    
+    public Vector3 forge;
+    int maxDistanceFromForge = 5;
+
     List<Texture2D> selectedItems;
     List<Texture2D> equiptedItems;
 
@@ -156,7 +158,7 @@ public class Inventory : MonoBehaviour {
 
             
 
-            if (Input.GetMouseButtonDown(0) && currButton.Contains(Input.mousePosition))
+            if (Input.GetMouseButtonDown(0) && currButton.Contains(new Vector3(Input.mousePosition.x, Screen.height - Input.mousePosition.y, Input.mousePosition.z)))
             {
                 if (draggingTexture == null)
                 {
@@ -250,6 +252,8 @@ public class Inventory : MonoBehaviour {
     {
         name = string.Empty;
 
+        if (Vector3.Distance(transform.position, forge) > maxDistanceFromForge)
+            return false;
         if (textures.Count() == 0)
             return false;
 
@@ -280,7 +284,7 @@ public class Inventory : MonoBehaviour {
             return TryCraftEquipment(craftedResources, ref name);
     }
 
-    static bool TryCraftEquipment(List<CraftedResourcesType> craftedResources, ref string name)
+    bool TryCraftEquipment(List<CraftedResourcesType> craftedResources, ref string name)
     {
         var steelQuantities = new Dictionary<EquipmentType, int>() { { EquipmentType.ChestPlate, 3 }, { EquipmentType.SteelGloves, 1 } };
         var batteryQuantities = new Dictionary<EquipmentType, int>();

@@ -43,7 +43,8 @@ public class Movement : NetworkBehaviour
         GameObject assignedBase;
         team = Manager.AssignPlayerToTeam(this.gameObject, out startPosition, out assignedBase);
         GetComponent<Inventory>().teamInventory = assignedBase.transform.Find("chest").Find("ChestRadius").GetComponent<TeamInventory>();
-        transform.position = startPosition;
+        GetComponent<Inventory>().forge = assignedBase.transform.Find("Anvil").transform.position;
+       transform.position = startPosition;
         collider = GetComponent<BoxCollider>();
         teamInventory = gameObject.GetComponent<Inventory>().teamInventory;
     }
